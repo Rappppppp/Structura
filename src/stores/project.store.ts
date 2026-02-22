@@ -15,7 +15,7 @@ interface ProjectActions {
   setError: (error: string | null) => void;
 }
 
-type ProjectStore = ProjectState & ProjectActions;
+export type ProjectStore = ProjectState & ProjectActions;
 
 export const useProjectStore = create<ProjectStore>((set) => ({
   projects: mockProjects,

@@ -4,14 +4,15 @@ import { Brain, Clock, MessageSquare, Wand2, CalendarCheck, FileCheck, BarChart3
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { projects } from '@/data/mockData';
 
 const aiFeatures = [
-  { icon: Clock, title: 'AI Timeline Predictor', description: 'Predict project timelines based on historical data and current progress.', detail: 'Analyzes past project data to forecast completion dates and identify potential delays.' },
-  { icon: MessageSquare, title: 'Chat Summarizer', description: 'Generate concise summaries of project chat conversations.', detail: 'Processes chat history and extracts key decisions, action items, and discussion points.' },
-  { icon: Wand2, title: 'Design Generator', description: 'Create architectural design concepts using AI-assisted generation.', detail: 'Generates design concepts based on project requirements, site constraints, and style preferences.' },
-  { icon: CalendarCheck, title: 'Task Scheduler', description: 'Automatically optimize task assignments and deadlines.', detail: 'Uses workload analysis and dependency mapping to optimize task scheduling across teams.' },
-  { icon: FileCheck, title: 'Contract Checker', description: 'Analyze contracts for risks, compliance issues, and key terms.', detail: 'Scans contracts for potential risks, missing clauses, and compliance requirements.' },
-  { icon: BarChart3, title: 'Weekly Report Generator', description: 'Automatically compile and format weekly project progress reports.', detail: 'Aggregates project metrics, milestones, and team updates into a formatted report.' },
+  // { icon: Clock, title: 'AI Timeline Predictor', description: 'Predict project timelines based on historical data and current progress.', detail: 'Analyzes past project data to forecast completion dates and identify potential delays.' },
+  // { icon: MessageSquare, title: 'Chat Summarizer', description: 'Generate concise summaries of project chat conversations.', detail: 'Processes chat history and extracts key decisions, action items, and discussion points.' },
+  { icon: Wand2, title: 'Design Assistant', description: 'Create architectural design concepts using AI-assisted generation.', detail: 'Generates design concepts based on project requirements, site constraints, and style preferences.' },
+  // { icon: CalendarCheck, title: 'Task Scheduler', description: 'Automatically optimize task assignments and deadlines.', detail: 'Uses workload analysis and dependency mapping to optimize task scheduling across teams.' },
+  // { icon: FileCheck, title: 'Contract Checker', description: 'Analyze contracts for risks, compliance issues, and key terms.', detail: 'Scans contracts for potential risks, missing clauses, and compliance requirements.' },
+  // { icon: BarChart3, title: 'Weekly Report Generator', description: 'Automatically compile and format weekly project progress reports.', detail: 'Aggregates project metrics, milestones, and team updates into a formatted report.' },
 ];
 
 const AIInsights = () => {
@@ -61,10 +62,9 @@ const AIInsights = () => {
               <label className="mb-1.5 block text-sm font-medium text-foreground">Select Project</label>
               <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30">
                 <option>All Projects</option>
-                <option>Skyline Tower</option>
-                <option>Harbor Bridge Redesign</option>
-                <option>Green Campus Hub</option>
-                <option>Metro Station Complex</option>
+                {projects.map(project => {
+                  return <option key={project.id}>{project.name}</option>;
+                })}
               </select>
             </div>
             <div>

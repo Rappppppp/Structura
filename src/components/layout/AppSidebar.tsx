@@ -4,7 +4,8 @@ import { useAuth, UserRole } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, FolderKanban, Users, Building2, MessageSquare,
   CreditCard, Brain, BarChart3, Settings, CheckSquare, Upload,
-  Clock, FileText, Bot, LogOut, Grid3X3, Menu, X
+  Clock, FileText, Bot, LogOut, Grid3X3, Menu, X,
+  PencilRuler
 } from 'lucide-react';
 
 type NavItem = { label: string; path: string; icon: ElementType };
@@ -17,7 +18,8 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'Clients', path: '/clients', icon: Building2 },
     { label: 'Communication', path: '/communication', icon: MessageSquare },
     { label: 'Payments', path: '/payments', icon: CreditCard },
-    { label: 'AI Insights', path: '/ai-insights', icon: Brain },
+    { label: 'AI Design Assistant', path: '/ai-design-assistant', icon: PencilRuler },
+    // { label: 'AI Insights', path: '/ai-insights', icon: Brain },
     { label: 'Reports', path: '/reports', icon: BarChart3 },
     { label: 'Settings', path: '/settings', icon: Settings },
   ],
@@ -29,6 +31,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'Communication', path: '/communication', icon: MessageSquare },
     { label: 'AI Assistant', path: '/ai-insights', icon: Brain },
     { label: 'Reports', path: '/reports', icon: BarChart3 },
+    { label: 'AI Design Assistant', path: '/ai-design-assistant', icon: PencilRuler },
   ],
   engineer: [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -36,7 +39,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'Tasks', path: '/tasks', icon: CheckSquare },
     { label: 'Design Uploads', path: '/uploads', icon: Upload },
     { label: 'Communication', path: '/communication', icon: MessageSquare },
-    { label: 'AI Assistant', path: '/ai-insights', icon: Brain },
+    // { label: 'AI Assistant', path: '/ai-insights', icon: Brain },
   ],
   client: [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -45,7 +48,8 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'Documents', path: '/documents', icon: FileText },
     { label: 'Payments', path: '/payments', icon: CreditCard },
     { label: 'Chat', path: '/communication', icon: MessageSquare },
-    { label: 'AI Assistant', path: '/ai-insights', icon: Bot },
+    // { label: 'AI Assistant', path: '/ai-insights', icon: Bot },
+    { label: 'AI Design Assistant', path: '/ai-design-assistant', icon: PencilRuler },
   ],
 };
 
@@ -79,11 +83,10 @@ const AppSidebar = () => {
               key={item.path}
               to={item.path}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-                active
-                  ? 'bg-sidebar-accent text-sidebar-primary-foreground'
-                  : 'text-sidebar-accent-foreground hover:bg-sidebar-accent/50'
-              }`}
+              className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${active
+                ? 'bg-sidebar-accent text-sidebar-primary-foreground'
+                : 'text-sidebar-accent-foreground hover:bg-sidebar-accent/50'
+                }`}
             >
               <item.icon className="h-4.5 w-4.5 shrink-0" />
               {item.label}

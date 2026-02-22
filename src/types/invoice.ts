@@ -7,6 +7,7 @@ export interface Invoice {
   amount: number;
   status: InvoiceStatus;
   dueDate: string;
+  contractValue?: number;
 }
 
 export interface RevenueData {

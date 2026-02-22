@@ -31,9 +31,9 @@ const Reports = () => {
           <h1 className="text-2xl font-bold text-foreground">Reports</h1>
           <p className="text-sm text-muted-foreground mt-1">Analytics and AI-generated insights</p>
         </div>
-        <Button onClick={() => setReportOpen(true)}>
+        {/* <Button onClick={() => setReportOpen(true)}>
           <Brain className="h-4 w-4" /> Generate Weekly Report
-        </Button>
+        </Button> */}
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
