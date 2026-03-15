@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useTeamStore } from '@/stores/team.store';
+import { useTeamMembers } from '@/hooks/queries/useTeamMembers';
+import { useCreateTeamMemberMutation } from '@/hooks/mutations/useTeamMutations';
+import { useQueryClient } from '@tanstack/react-query';
 import { Users, Mail, Phone, FolderKanban, Plus, Search, Filter } from 'lucide-react';
 
 const roleColors: Record<string, string> = {
@@ -22,9 +24,13 @@ const Teams = () => {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [addOpen, setAddOpen] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', role: '' });
   const { toast } = useToast();
-  const detailedMembers = useTeamStore((s) => s.detailedMembers);
+  const queryClient = useQueryClient();
+  const { data: teamData, isLoading } = useTeamMembers();
+  const createTeamMember = useCreateTeamMemberMutation();
 
+  const detailedMembers = teamData?.data || [];
   const roles = ['All', ...Array.from(new Set(detailedMembers.map(m => m.role)))];
 
   const filtered = detailedMembers.filter(m => {
@@ -33,86 +39,117 @@ const Teams = () => {
     return matchSearch && matchRole;
   });
 
+  const handleAddMember = async () => {
+    if (!formData.name || !formData.email || !formData.role) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      await createTeamMember.mutateAsync({
+        name: formData.name,
+        email: formData.email,
+        role: formData.role
+      });
+
+      setFormData({ name: '', email: '', role: '' });
+      setAddOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+      toast({ title: 'Success', description: 'Team member invited successfully' });
+    } catch (err: any) {
+      toast({ 
+        title: 'Error', 
+        description: err.response?.data?.message || 'Failed to add team member',
+        variant: 'destructive' 
+      });
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Teams</h1>
-          <p className="text-sm text-muted-foreground mt-1">{detailedMembers.length} team members across all projects</p>
+          <p className="text-sm text-muted-foreground mt-1">{detailedMembers.length} team members</p>
         </div>
         <Button onClick={() => setAddOpen(true)}>
           <Plus className="h-4 w-4" /> Add Member
         </Button>
       </div>
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search by name or role..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
-          />
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Loading team members...</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <select
-            value={roleFilter}
-            onChange={e => setRoleFilter(e.target.value)}
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
-          >
-            {roles.map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
-        </div>
-      </div>
+      )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filtered.map(member => (
-          <Card key={member.id} className="animate-fade-in hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                  {member.avatar}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <CardTitle className="text-base truncate">{member.name}</CardTitle>
-                  <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${roleColors[member.role] || 'bg-muted text-muted-foreground'}`}>
-                    {member.role}
-                  </span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2.5">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{member.email}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="h-3.5 w-3.5 shrink-0" />
-                <span>{member.phone}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <FolderKanban className="h-3.5 w-3.5 shrink-0" />
-                <span>{member.projects} active projects</span>
-              </div>
-              <div className="flex flex-wrap gap-1 pt-1">
-                {member.assignedProjects.map(p => (
-                  <span key={p} className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{p}</span>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {!isLoading && (
+        <>
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by name or role..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <select
+                value={roleFilter}
+                onChange={e => setRoleFilter(e.target.value)}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+              >
+                {roles.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+          </div>
 
-      {filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <Users className="h-12 w-12 mb-3" />
-          <p className="text-sm font-medium">No team members found</p>
-          <p className="text-xs">Try adjusting your search or filter</p>
-        </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filtered.map(member => (
+              <Card key={member.id} className="animate-fade-in hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                      {member.name.charAt(0)}{member.name.split(' ')[1]?.charAt(0) || ''}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-base truncate">{member.name}</CardTitle>
+                      <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${roleColors[member.role] || 'bg-muted text-muted-foreground'}`}>
+                        {member.role}
+                      </span>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2.5">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{member.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Phone className="h-3.5 w-3.5 shrink-0" />
+                    <span>{member.phone || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <FolderKanban className="h-3.5 w-3.5 shrink-0" />
+                    <span>{member.projects || 0} projects</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {filtered.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Users className="h-12 w-12 mb-3" />
+              <p className="text-sm font-medium">No team members found</p>
+              <p className="text-xs">Try adjusting your search or filter</p>
+            </div>
+          )}
+        </>
       )}
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
@@ -123,29 +160,45 @@ const Teams = () => {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Full Name</label>
-              <input className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" placeholder="John Doe" />
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Full Name *</label>
+              <input 
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
+                placeholder="John Doe" 
+                value={formData.name}
+                onChange={e => setFormData({...formData, name: e.target.value})}
+              />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
-              <input type="email" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" placeholder="john@structura.com" />
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Email *</label>
+              <input 
+                type="email" 
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
+                placeholder="john@structura.com" 
+                value={formData.email}
+                onChange={e => setFormData({...formData, email: e.target.value})}
+              />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Role</label>
-              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30">
-                <option>Lead Architect</option>
-                <option>Structural Engineer</option>
-                <option>Interior Designer</option>
-                <option>Project Manager</option>
-                <option>MEP Engineer</option>
-                <option>Civil Engineer</option>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Role *</label>
+              <select 
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+                value={formData.role}
+                onChange={e => setFormData({...formData, role: e.target.value})}
+              >
+                <option value="">Select a role...</option>
+                <option value="Lead Architect">Lead Architect</option>
+                <option value="Structural Engineer">Structural Engineer</option>
+                <option value="Interior Designer">Interior Designer</option>
+                <option value="Project Manager">Project Manager</option>
+                <option value="MEP Engineer">MEP Engineer</option>
+                <option value="Civil Engineer">Civil Engineer</option>
               </select>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button onClick={() => { setAddOpen(false); toast({ title: 'Invitation Sent', description: 'Team member has been invited via email.' }); }}>
-              Send Invitation
+            <Button onClick={handleAddMember} disabled={createTeamMember.isPending}>
+              {createTeamMember.isPending ? 'Sending...' : 'Send Invitation'}
             </Button>
           </DialogFooter>
         </DialogContent>

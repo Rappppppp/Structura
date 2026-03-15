@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { useProjectStore } from '@/stores/project.store';
+import { useProjects } from '@/hooks/queries/useProjects';
+import { useCreateProjectMutation } from '@/hooks/mutations/useProjectMutations';
+import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -11,19 +13,69 @@ import { useToast } from '@/hooks/use-toast';
 const Projects = () => {
   const [search, setSearch] = useState('');
   const [newProjectOpen, setNewProjectOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    client: '',
+    budget: '',
+    deadline: ''
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const projects = useProjectStore((s) => s.projects);
-
+  const queryClient = useQueryClient();
+  
+  const { data: projectsData, isLoading, error } = useProjects(undefined, 1, 100);
+  const createProject = useCreateProjectMutation();
+  
+  const projects = projectsData?.data || [];
+  
   const filtered = projects.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.client.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleCreateProject = () => {
-    setNewProjectOpen(false);
-    toast({ title: 'Project Created', description: 'Your new project has been created successfully.' });
+  const handleCreateProject = async () => {
+    if (!formData.name || !formData.budget || !formData.deadline) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      await createProject.mutateAsync({
+        name: formData.name,
+        client: formData.client || 'N/A',
+        budget: parseFloat(formData.budget),
+        deadline: formData.deadline,
+        status: 'active'
+      });
+      
+      setFormData({ name: '', client: '', budget: '', deadline: '' });
+      setNewProjectOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast({ title: 'Success', description: 'Project created successfully' });
+    } catch (err: any) {
+      toast({ 
+        title: 'Error', 
+        description: err.response?.data?.message || 'Failed to create project',
+        variant: 'destructive' 
+      });
+    }
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-12">Loading projects...</div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-12 text-destructive">Error loading projects</div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -102,27 +154,50 @@ const Projects = () => {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Project Name</label>
-              <input placeholder="e.g. Central Park Tower" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" />
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Project Name *</label>
+              <input 
+                placeholder="e.g. Central Park Tower" 
+                value={formData.name}
+                onChange={e => setFormData({...formData, name: e.target.value})}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
+              />
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
-              <input placeholder="e.g. Urban Dev Corp" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" />
+              <input 
+                placeholder="e.g. Urban Dev Corp" 
+                value={formData.client}
+                onChange={e => setFormData({...formData, client: e.target.value})}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Budget (₱)</label>
-                <input type="number" placeholder="5000000" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Budget (₱) *</label>
+                <input 
+                  type="number" 
+                  placeholder="5000000" 
+                  value={formData.budget}
+                  onChange={e => setFormData({...formData, budget: e.target.value})}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
+                />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Deadline</label>
-                <input type="date" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Deadline *</label>
+                <input 
+                  type="date" 
+                  value={formData.deadline}
+                  onChange={e => setFormData({...formData, deadline: e.target.value})}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
+                />
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewProjectOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateProject}>Create Project</Button>
+            <Button onClick={handleCreateProject} disabled={createProject.isPending}>
+              {createProject.isPending ? 'Creating...' : 'Create Project'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

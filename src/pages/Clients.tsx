@@ -6,7 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { useToast } from '@/hooks/use-toast';
-import { useClientStore } from '@/stores/client.store';
+import { useClients } from '@/hooks/queries/useClients';
+import { useCreateClientMutation } from '@/hooks/mutations/useClientMutations';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Client } from '@/types';
 import { Building2, Plus, Search, Mail, Phone, MapPin, DollarSign } from 'lucide-react';
 
@@ -14,13 +16,52 @@ const Clients = () => {
   const [search, setSearch] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    address: ''
+  });
   const { toast } = useToast();
-  const clients = useClientStore((s) => s.clients);
+  const queryClient = useQueryClient();
+  const { data: clientsData, isLoading, error } = useClients();
+  const createClient = useCreateClientMutation();
+  
+  const clients = clientsData?.data || [];
 
   const filtered = clients.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.contactPerson.toLowerCase().includes(search.toLowerCase())
+    (c.contactPerson && c.contactPerson.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const handleAddClient = async () => {
+    if (!formData.name || !formData.email) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      await createClient.mutateAsync({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        company: formData.company || undefined,
+        address: formData.address || undefined
+      });
+
+      setFormData({ name: '', email: '', phone: '', company: '', address: '' });
+      setAddOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast({ title: 'Success', description: 'Client added successfully' });
+    } catch (err: any) {
+      toast({ 
+        title: 'Error', 
+        description: err.response?.data?.message || 'Failed to add client',
+        variant: 'destructive' 
+      });
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -34,91 +75,104 @@ const Clients = () => {
         </Button>
       </div>
 
-      <div className="mb-6">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search clients..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
-          />
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Loading clients...</p>
         </div>
-      </div>
+      )}
 
-      <div className="hidden md:block rounded-lg border border-border bg-card animate-fade-in">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Client</TableHead>
-              <TableHead>Contact Person</TableHead>
-              <TableHead>Projects</TableHead>
-              <TableHead>Total Value</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+      {error && (
+        <div className="flex items-center justify-center py-12">
+          <p className="text-destructive">Error loading clients</p>
+        </div>
+      )}
+
+      {!isLoading && !error && (
+        <>
+          <div className="mb-6">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search clients..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+              />
+            </div>
+          </div>
+
+          <div className="hidden md:block rounded-lg border border-border bg-card animate-fade-in">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Contact Person</TableHead>
+                  <TableHead>Active Projects</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map(client => (
+                  <TableRow key={client.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <Building2 className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{client.name}</p>
+                          <p className="text-xs text-muted-foreground">{client.industry}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <p className="text-sm text-foreground">{client.contactPerson}</p>
+                      <p className="text-xs text-muted-foreground">{client.email}</p>
+                    </TableCell>
+                    <TableCell className="text-sm">{client.activeProjects || 0} projects</TableCell>
+                    <TableCell><StatusBadge status={client.status} /></TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedClient(client)}>View</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="md:hidden space-y-3">
             {filtered.map(client => (
-              <TableRow key={client.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Building2 className="h-4 w-4" />
+              <Card key={client.id} className="animate-fade-in" onClick={() => setSelectedClient(client)}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Building2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{client.name}</p>
+                        <p className="text-xs text-muted-foreground">{client.industry}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{client.name}</p>
-                      <p className="text-xs text-muted-foreground">{client.industry}</p>
-                    </div>
+                    <StatusBadge status={client.status} />
                   </div>
-                </TableCell>
-                <TableCell>
-                  <p className="text-sm text-foreground">{client.contactPerson}</p>
-                  <p className="text-xs text-muted-foreground">{client.email}</p>
-                </TableCell>
-                <TableCell className="text-sm">{client.activeProjects} active</TableCell>
-                <TableCell className="text-sm font-medium">₱{(client.totalValue / 1000000).toFixed(1)}M</TableCell>
-                <TableCell><StatusBadge status={client.status} /></TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedClient(client)}>View</Button>
-                </TableCell>
-              </TableRow>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <span>{client.activeProjects || 0} projects</span>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
-          </TableBody>
-        </Table>
-      </div>
+          </div>
 
-      <div className="md:hidden space-y-3">
-        {filtered.map(client => (
-          <Card key={client.id} className="animate-fade-in" onClick={() => setSelectedClient(client)}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Building2 className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{client.name}</p>
-                    <p className="text-xs text-muted-foreground">{client.industry}</p>
-                  </div>
-                </div>
-                <StatusBadge status={client.status} />
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                <span>{client.activeProjects} active projects</span>
-                <span className="text-right font-medium text-foreground">₱{(client.totalValue / 1000000).toFixed(1)}M</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <Building2 className="h-12 w-12 mb-3" />
-          <p className="text-sm font-medium">No clients found</p>
-        </div>
+          {filtered.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Building2 className="h-12 w-12 mb-3" />
+              <p className="text-sm font-medium">No clients found</p>
+            </div>
+          )}
+        </>
       )}
 
       <Dialog open={!!selectedClient} onOpenChange={() => setSelectedClient(null)}>
@@ -131,21 +185,12 @@ const Clients = () => {
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="flex items-center gap-2 text-sm"><Mail className="h-4 w-4 text-muted-foreground" />{selectedClient.email}</div>
-                <div className="flex items-center gap-2 text-sm"><Phone className="h-4 w-4 text-muted-foreground" />{selectedClient.phone}</div>
-                <div className="flex items-center gap-2 text-sm"><MapPin className="h-4 w-4 text-muted-foreground" />{selectedClient.location}</div>
-                <div className="flex items-center gap-2 text-sm"><DollarSign className="h-4 w-4 text-muted-foreground" />₱{(selectedClient.totalValue / 1000000).toFixed(1)}M total value</div>
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-foreground mb-2">Associated Projects</h4>
-                <div className="space-y-2">
-                  {selectedClient.projects.map(p => (
-                    <div key={p} className="rounded-md border border-border px-3 py-2 text-sm text-foreground">{p}</div>
-                  ))}
-                </div>
+                <div className="flex items-center gap-2 text-sm"><Phone className="h-4 w-4 text-muted-foreground" />{selectedClient.phone || 'N/A'}</div>
+                <div className="flex items-center gap-2 text-sm"><MapPin className="h-4 w-4 text-muted-foreground" />{selectedClient.location || 'N/A'}</div>
               </div>
               <div>
                 <h4 className="text-sm font-semibold text-foreground mb-2">Contact Person</h4>
-                <p className="text-sm text-muted-foreground">{selectedClient.contactPerson}</p>
+                <p className="text-sm text-muted-foreground">{selectedClient.contactPerson || 'N/A'}</p>
               </div>
             </div>
           )}
@@ -160,32 +205,56 @@ const Clients = () => {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Company Name</label>
-              <input className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" placeholder="Acme Corp" />
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Company Name *</label>
+              <input 
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
+                placeholder="Acme Corp" 
+                value={formData.name}
+                onChange={e => setFormData({...formData, name: e.target.value})}
+              />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Contact Person</label>
-              <input className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" placeholder="Jane Smith" />
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Company</label>
+              <input 
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
+                placeholder="Acme Corp" 
+                value={formData.company}
+                onChange={e => setFormData({...formData, company: e.target.value})}
+              />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
-              <input type="email" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" placeholder="contact@acme.com" />
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Email *</label>
+              <input 
+                type="email" 
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
+                placeholder="contact@acme.com" 
+                value={formData.email}
+                onChange={e => setFormData({...formData, email: e.target.value})}
+              />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Industry</label>
-              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30">
-                <option>Real Estate Development</option>
-                <option>Government</option>
-                <option>Education</option>
-                <option>Technology</option>
-                <option>Healthcare</option>
-              </select>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Phone</label>
+              <input 
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
+                placeholder="+63 9XX XXXX XXX" 
+                value={formData.phone}
+                onChange={e => setFormData({...formData, phone: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Address</label>
+              <input 
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
+                placeholder="City, Country" 
+                value={formData.address}
+                onChange={e => setFormData({...formData, address: e.target.value})}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button onClick={() => { setAddOpen(false); toast({ title: 'Client Added', description: 'New client has been registered successfully.' }); }}>
-              Add Client
+            <Button onClick={handleAddClient} disabled={createClient.isPending}>
+              {createClient.isPending ? 'Adding...' : 'Add Client'}
             </Button>
           </DialogFooter>
         </DialogContent>

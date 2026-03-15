@@ -3,9 +3,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatCard from '@/components/dashboard/StatCard';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { useProjectStore } from '@/stores/project.store';
-import { useTaskStore } from '@/stores/task.store';
-import { useCommunicationStore } from '@/stores/communication.store';
+import { useProjects } from '@/hooks/queries/useProjects';
+import { useTasks } from '@/hooks/queries/useTasks';
+import { useProjectStatusData } from '@/hooks/queries/useProjects';
 import {
   FolderKanban, Clock, MessageSquare, CreditCard, TrendingUp,
   CheckCircle2, AlertCircle, Brain
@@ -18,13 +18,22 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
 const AdminDashboard = () => {
-  const projects = useProjectStore((s) => s.projects);
-  const statusData = useProjectStore((s) => s.statusData);
+  const { data: projectsData, isLoading: projectsLoading } = useProjects(undefined, 1, 12);
+  const { data: statusData, isLoading: statusLoading } = useProjectStatusData();
+  
+  const projects = projectsData?.data || [];
+  const chartData = Array.isArray(statusData?.data) ? statusData.data : (statusData?.data ? [statusData.data] : []);
+  
+  const activeProjectsCount = projects.filter(p => p.status === 'active').length;
+  
+  if (projectsLoading || statusLoading) {
+    return <div className="text-center py-12">Loading dashboard...</div>;
+  }
 
   return (
     <>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={FolderKanban} title="Active Projects" value={4} change="+2 this month" changeType="positive" />
+        <StatCard icon={FolderKanban} title="Active Projects" value={activeProjectsCount} change="+2 this month" changeType="positive" />
         <StatCard icon={Clock} title="Upcoming Deadlines" value={3} change="Next: Mar 20" changeType="neutral" />
         <StatCard icon={MessageSquare} title="Unread Messages" value={9} change="+5 today" changeType="negative" />
         <StatCard icon={CreditCard} title="Pending Payments" value="₱2.02M" change="2 invoices due" changeType="neutral" />
@@ -34,7 +43,7 @@ const AdminDashboard = () => {
         <div className="rounded-lg border border-border bg-card p-6 animate-fade-in">
           <h3 className="mb-4 text-base font-semibold text-card-foreground">Project Status Overview</h3>
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={statusData}>
+            <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
               <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'hsl(220 9% 46%)' }} />
               <YAxis tick={{ fontSize: 12, fill: 'hsl(220 9% 46%)' }} />
@@ -53,7 +62,7 @@ const AdminDashboard = () => {
               <div key={p.id} className="flex items-center justify-between rounded-md border border-border p-3">
                 <div>
                   <p className="text-sm font-medium text-card-foreground">{p.name}</p>
-                  <p className="text-xs text-muted-foreground">{p.client}</p>
+                  <p className="text-xs text-muted-foreground">{p.client || 'N/A'}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-24">
@@ -75,14 +84,22 @@ const AdminDashboard = () => {
 const ArchitectDashboard = () => {
   const [aiOpen, setAiOpen] = useState(false);
   const { toast } = useToast();
-  const tasks = useTaskStore((s) => s.tasks);
+  const { data: tasksData, isLoading: tasksLoading } = useTasks();
+  
+  const tasks = tasksData?.data || [];
   const columns = { todo: 'To Do', 'in-progress': 'In Progress', done: 'Done' } as const;
+  
+  const completedTasks = tasks.filter(t => t.status === 'done').length;
+  
+  if (tasksLoading) {
+    return <div className="text-center py-12">Loading tasks...</div>;
+  }
 
   return (
     <>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={FolderKanban} title="My Projects" value={3} change="2 active" changeType="positive" />
-        <StatCard icon={CheckCircle2} title="Tasks Completed" value={12} change="This week" changeType="positive" />
+        <StatCard icon={CheckCircle2} title="Tasks Completed" value={completedTasks} change="This week" changeType="positive" />
         <StatCard icon={AlertCircle} title="Pending Reviews" value={4} change="2 urgent" changeType="negative" />
         <StatCard icon={TrendingUp} title="Design Uploads" value={28} change="+6 this week" changeType="positive" />
       </div>
@@ -106,7 +123,7 @@ const ArchitectDashboard = () => {
                       <span className={`text-xs font-medium ${t.priority === 'high' ? 'text-destructive' : t.priority === 'medium' ? 'text-warning' : 'text-muted-foreground'}`}>
                         {t.priority}
                       </span>
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">{t.assignee}</span>
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">A</span>
                     </div>
                   </div>
                 ))}
@@ -153,7 +170,10 @@ const ArchitectDashboard = () => {
 const ClientDashboard = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const { toast } = useToast();
-  const timelineEvents = useCommunicationStore((s) => s.timelineEvents);
+  
+  // Timeline events would be fetched for a specific project
+  // For now, showing placeholder structure
+  const timelineEvents = [];
 
   return (
     <>
@@ -167,19 +187,23 @@ const ClientDashboard = () => {
         <div className="rounded-lg border border-border bg-card p-6 animate-fade-in">
           <h3 className="mb-4 text-base font-semibold text-card-foreground">Project Timeline</h3>
           <div className="relative space-y-0">
-            {timelineEvents.map((ev, i) => (
-              <div key={i} className="flex gap-4 pb-6 last:pb-0">
-                <div className="flex flex-col items-center">
-                  <div className="h-3 w-3 rounded-full border-2 border-primary bg-card" />
-                  {i < timelineEvents.length - 1 && <div className="w-0.5 flex-1 bg-border" />}
+            {timelineEvents.length > 0 ? (
+              timelineEvents.map((ev: any, i: number) => (
+                <div key={i} className="flex gap-4 pb-6 last:pb-0">
+                  <div className="flex flex-col items-center">
+                    <div className="h-3 w-3 rounded-full border-2 border-primary bg-card" />
+                    {i < timelineEvents.length - 1 && <div className="w-0.5 flex-1 bg-border" />}
+                  </div>
+                  <div className="-mt-0.5">
+                    <p className="text-xs font-medium text-muted-foreground">{ev.date}</p>
+                    <p className="text-sm font-semibold text-card-foreground">{ev.title}</p>
+                    <p className="text-sm text-muted-foreground">{ev.description}</p>
+                  </div>
                 </div>
-                <div className="-mt-0.5">
-                  <p className="text-xs font-medium text-muted-foreground">{ev.date}</p>
-                  <p className="text-sm font-semibold text-card-foreground">{ev.title}</p>
-                  <p className="text-sm text-muted-foreground">{ev.description}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No timeline events yet</p>
+            )}
           </div>
         </div>
 

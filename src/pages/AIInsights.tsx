@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { useProjects } from '@/hooks/queries/useProjects';
 import { Brain, Clock, MessageSquare, Wand2, CalendarCheck, FileCheck, BarChart3 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { projects } from '@/data/mockData';
 
 const aiFeatures = [
   // { icon: Clock, title: 'AI Timeline Predictor', description: 'Predict project timelines based on historical data and current progress.', detail: 'Analyzes past project data to forecast completion dates and identify potential delays.' },
@@ -17,11 +17,18 @@ const aiFeatures = [
 
 const AIInsights = () => {
   const [selectedFeature, setSelectedFeature] = useState<typeof aiFeatures[0] | null>(null);
+  const [selectedProject, setSelectedProject] = useState('');
+  const [notes, setNotes] = useState('');
   const { toast } = useToast();
+  const { data: projectsData } = useProjects(undefined, 1, 100);
+
+  const projects = projectsData?.data || [];
 
   const handleLaunch = () => {
     const name = selectedFeature?.title;
     setSelectedFeature(null);
+    setSelectedProject('');
+    setNotes('');
     toast({ title: `${name} Started`, description: `The ${name} is now processing. Results will be available shortly.` });
   };
 
@@ -60,16 +67,26 @@ const AIInsights = () => {
           <div className="py-4 space-y-4">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-foreground">Select Project</label>
-              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30">
-                <option>All Projects</option>
-                {projects.map(project => {
-                  return <option key={project.id}>{project.name}</option>;
-                })}
+              <select 
+                value={selectedProject}
+                onChange={e => setSelectedProject(e.target.value)}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+              >
+                <option value="">All Projects</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>{project.name}</option>
+                ))}
               </select>
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-foreground">Additional Notes</label>
-              <textarea rows={3} placeholder="Any specific focus areas or parameters..." className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 resize-none" />
+              <textarea 
+                rows={3} 
+                placeholder="Any specific focus areas or parameters..." 
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 resize-none" 
+              />
             </div>
           </div>
           <DialogFooter>

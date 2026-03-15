@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { useInvoiceStore } from '@/stores/invoice.store';
+import { useInvoices } from '@/hooks/queries/useInvoices';
+import { useProjects } from '@/hooks/queries/useProjects';
+import { useCreateInvoiceMutation } from '@/hooks/mutations/useInvoiceMutations';
+import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Upload, FileText, ClipboardList } from 'lucide-react';
 import {
   Dialog,
@@ -17,16 +20,43 @@ import { useToast } from '@/hooks/use-toast';
 const Payments = () => {
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [variationOpen, setVariationOpen] = useState(false);
+  const [invoiceForm, setInvoiceForm] = useState({ project_id: '', client_id: '', amount: '', due_date: '' });
+  const [variationForm, setVariationForm] = useState({ project_id: '', description: '', amount: '' });
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const invoices = useInvoiceStore((s) => s.invoices);
+  const { data: invoicesData, isLoading: invoicesLoading } = useInvoices();
+  const { data: projectsData } = useProjects(undefined, 1, 100);
+  const createInvoice = useCreateInvoiceMutation();
 
-  const handleGenerateInvoice = () => {
-    setInvoiceOpen(false);
-    toast({
-      title: 'Invoice Generated',
-      description: 'New invoice has been created successfully.',
-    });
+  const invoices = invoicesData?.data || [];
+  const projects = projectsData?.data || [];
+
+  const handleGenerateInvoice = async () => {
+    if (!invoiceForm.project_id || !invoiceForm.client_id || !invoiceForm.amount || !invoiceForm.due_date) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      await createInvoice.mutateAsync({
+        project_id: invoiceForm.project_id,
+        client_id: invoiceForm.client_id,
+        amount: parseFloat(invoiceForm.amount),
+        due_date: invoiceForm.due_date
+      });
+
+      setInvoiceForm({ project_id: '', client_id: '', amount: '', due_date: '' });
+      setInvoiceOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast({ title: 'Success', description: 'Invoice generated successfully' });
+    } catch (err: any) {
+      toast({ 
+        title: 'Error', 
+        description: err.response?.data?.message || 'Failed to create invoice',
+        variant: 'destructive' 
+      });
+    }
   };
 
   const handleCreateVariation = () => {
@@ -43,19 +73,14 @@ const Payments = () => {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Payments & Contracts
+            Payments & Invoices
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage invoices, billing progress, and variation orders
+            Manage invoices and billing progress
           </p>
         </div>
 
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setVariationOpen(true)}>
-            <ClipboardList className="h-4 w-4" />
-            Variation / Change Order
-          </Button>
-
           <Button onClick={() => setInvoiceOpen(true)}>
             <Plus className="h-4 w-4" />
             Generate Invoice
@@ -63,47 +88,45 @@ const Payments = () => {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="grid grid-cols-1 gap-6">
-        <div className="animate-fade-in rounded-lg border border-border bg-card">
-          <div className="border-b border-border px-4 py-3">
-            <h3 className="text-sm font-semibold text-card-foreground">
-              Invoices
-            </h3>
-          </div>
+      {invoicesLoading && (
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Loading invoices...</p>
+        </div>
+      )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  {[
-                    'Invoice ID',
-                    'Project',
-                    'Client',
-                    'Progress',
-                    'Status',
-                    'Due Date',
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
+      {!invoicesLoading && (
+        <div className="grid grid-cols-1 gap-6">
+          <div className="animate-fade-in rounded-lg border border-border bg-card">
+            <div className="border-b border-border px-4 py-3">
+              <h3 className="text-sm font-semibold text-card-foreground">
+                Invoices
+              </h3>
+            </div>
 
-              <tbody>
-                {invoices.map((inv) => {
-                  const total = inv.contractValue ?? 500000;
-                  const billed = inv.amount ?? 0;
-                  const percent = Math.min(
-                    100,
-                    Math.round((billed / total) * 100)
-                  );
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    {[
+                      'Invoice ID',
+                      'Project',
+                      'Client',
+                      'Amount',
+                      'Status',
+                      'Due Date',
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
 
-                  return (
+                <tbody>
+                  {invoices.map((inv) => (
                     <tr
                       key={inv.id}
                       className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
@@ -120,25 +143,8 @@ const Payments = () => {
                         {inv.client}
                       </td>
 
-                      {/* Progress Column */}
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          <div className="text-sm font-medium text-foreground">
-                            ₱{(billed / 1000).toFixed(0)}K /
-                            ₱{(total / 1000).toFixed(0)}K
-                          </div>
-
-                          <div className="h-2 w-full rounded-full bg-muted">
-                            <div
-                              className="h-2 rounded-full bg-primary transition-all"
-                              style={{ width: `${percent}%` }}
-                            />
-                          </div>
-
-                          <span className="text-xs text-muted-foreground">
-                            {percent}% completed
-                          </span>
-                        </div>
+                      <td className="px-4 py-3 text-sm font-medium">
+                        ₱{(inv.amount / 1000).toFixed(0)}K
                       </td>
 
                       <td className="px-4 py-3">
@@ -149,13 +155,20 @@ const Payments = () => {
                         {inv.dueDate}
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {invoices.length === 0 && (
+              <div className="px-4 py-12 text-center text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No invoices yet</p>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Generate Invoice Dialog */}
       <Dialog open={invoiceOpen} onOpenChange={setInvoiceOpen}>
@@ -170,33 +183,53 @@ const Payments = () => {
           <div className="space-y-4 py-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium">
-                Project
+                Project *
               </label>
-              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-                <option>Skyline Tower</option>
-                <option>Harbor Bridge Redesign</option>
-                <option>Green Campus Hub</option>
-                <option>Metro Station Complex</option>
+              <select 
+                value={invoiceForm.project_id}
+                onChange={e => setInvoiceForm({...invoiceForm, project_id: e.target.value})}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">Select a project...</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
               </select>
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium">
-                Billing Amount (₱)
+                Client *
               </label>
               <input
-                type="number"
-                placeholder="150000"
+                placeholder="Client ID or name"
+                value={invoiceForm.client_id}
+                onChange={e => setInvoiceForm({...invoiceForm, client_id: e.target.value})}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium">
-                Due Date
+                Billing Amount (₱) *
+              </label>
+              <input
+                type="number"
+                placeholder="150000"
+                value={invoiceForm.amount}
+                onChange={e => setInvoiceForm({...invoiceForm, amount: e.target.value})}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">
+                Due Date *
               </label>
               <input
                 type="date"
+                value={invoiceForm.due_date}
+                onChange={e => setInvoiceForm({...invoiceForm, due_date: e.target.value})}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               />
             </div>
@@ -206,8 +239,8 @@ const Payments = () => {
             <Button variant="outline" onClick={() => setInvoiceOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleGenerateInvoice}>
-              Generate
+            <Button onClick={handleGenerateInvoice} disabled={createInvoice.isPending}>
+              {createInvoice.isPending ? 'Generating...' : 'Generate'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -228,11 +261,15 @@ const Payments = () => {
               <label className="mb-1.5 block text-sm font-medium">
                 Project
               </label>
-              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-                <option>Skyline Tower</option>
-                <option>Harbor Bridge Redesign</option>
-                <option>Green Campus Hub</option>
-                <option>Metro Station Complex</option>
+              <select 
+                value={variationForm.project_id}
+                onChange={e => setVariationForm({...variationForm, project_id: e.target.value})}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">Select a project...</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
               </select>
             </div>
 
@@ -243,6 +280,8 @@ const Payments = () => {
               <textarea
                 rows={4}
                 placeholder="Describe the change in scope..."
+                value={variationForm.description}
+                onChange={e => setVariationForm({...variationForm, description: e.target.value})}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
             </div>
@@ -254,6 +293,8 @@ const Payments = () => {
               <input
                 type="number"
                 placeholder="50000"
+                value={variationForm.amount}
+                onChange={e => setVariationForm({...variationForm, amount: e.target.value})}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               />
             </div>

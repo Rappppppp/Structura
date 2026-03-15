@@ -2,7 +2,7 @@ import { ReactNode, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { useProjectStore, selectProjectById } from '@/stores/project.store';
+import { useProject } from '@/hooks/queries/useProjects';
 import { ArrowLeft, Users, FolderKanban, FileText, MessageSquare, Cuboid, Pyramid } from 'lucide-react';
 
 import { useQuickActionStore } from '@/stores/project.detailed.quickaction.store';
@@ -26,7 +26,8 @@ const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
-  const project = useProjectStore(selectProjectById(id || ''));
+  const { data: projectData, isLoading, error } = useProject(id || '');
+  const project = projectData?.data;
 
   const TAB_COMPONENTS: Record<string, ReactNode> = {
     overview: <Overview project={project} />,
@@ -38,7 +39,15 @@ const ProjectDetail = () => {
 
   const { setActiveAction } = useQuickActionStore();
 
-  if (!project) return (
+  if (isLoading) return (
+    <DashboardLayout>
+      <div className="flex h-64 items-center justify-center">
+        <p className="text-muted-foreground">Loading project...</p>
+      </div>
+    </DashboardLayout>
+  );
+
+  if (error || !project) return (
     <DashboardLayout>
       <div className="flex h-64 items-center justify-center">
         <p className="text-muted-foreground">Project not found.</p>
