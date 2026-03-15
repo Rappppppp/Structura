@@ -30,13 +30,12 @@ const Login = () => {
     '/images/login/1.jpg',
     '/images/login/2.jpg',
     '/images/login/3.jpg',
-    '/images/login/4.jpg',
-
+    '/images/login/4.jpg', 
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, password, role);
+    login(email, password);
     navigate('/dashboard');
   };
 

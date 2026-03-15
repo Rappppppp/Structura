@@ -10,6 +10,18 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    proxy: {
+      "/api": {
+        target: process.env.VITE_API_BASE_URL || "http://localhost:8000",
+        changeOrigin: false,
+        rewrite: (path) => path.replace(/^\/api/, "/api"),
+      },
+      "/sanctum": {
+        target: process.env.VITE_APP_BASE_URL || "http://localhost:8000",
+        changeOrigin: false,
+        rewrite: (path) => path.replace(/^\/sanctum/, "/sanctum"),
+      },
+    },
   },
   plugins: [react()],
   resolve: {
