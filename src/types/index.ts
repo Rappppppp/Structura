@@ -5,3 +5,4 @@ export * from './team';
 export * from './communication';
 export * from './task';
 export * from './client';
+export * from './user';

@@ -29,30 +29,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    * (JWT token persists in localStorage)
    */
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        authStore.setLoading(true);
-        // Try to fetch current user - if it succeeds, we're authenticated
-        // if it fails with 401, we're not authenticated
-      } catch {
-        authStore.logout();
-      } finally {
-        authStore.setLoading(false);
-      }
-    };
-
-    checkAuth();
+    authStore.initializeAuth();
   }, []);
 
   /**
-   * Sync user profile from query to store
+   * Sync user profile from query to store when available
    */
   useEffect(() => {
-    if (userProfile?.user) {
-      authStore.setUser(userProfile.user);
+    if (userProfile?.data?.user && !authStore.user) {
+      // Only update if we don't already have a user (first load after token restore)
+      authStore.setUser(userProfile.data.user);
       authStore.setAuthenticated(true);
     }
-  }, [userProfile?.user]);
+  }, [userProfile?.data?.user, authStore.user]);
 
   /**
    * Listen for logout events (e.g., session expired)
@@ -103,13 +92,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleLogout = async () => {
     try {
       authStore.setLoading(true);
-      clearToken()
+      clearToken();
       await logoutMutation.mutateAsync();
-      authStore.logout();
     } catch (err) {
       // Even if logout mutation fails, clear locally
-      authStore.logout();
+      console.error('Logout error:', err);
     } finally {
+      authStore.logout();
       authStore.setLoading(false);
     }
   };

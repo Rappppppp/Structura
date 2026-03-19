@@ -28,12 +28,18 @@ const Clients = () => {
   const { data: clientsData, isLoading, error } = useClients();
   const createClient = useCreateClientMutation();
   
-  const clients = clientsData?.data || [];
+  // Extract clients array - handle both response structures
+  let clients = [];
+  if (Array.isArray(clientsData)) {
+    clients = clientsData;
+  } else if (clientsData?.data && Array.isArray(clientsData.data)) {
+    clients = clientsData.data;
+  }
 
-  const filtered = clients.filter(c =>
+  const filtered = Array.isArray(clients) ? clients.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
-    (c.contactPerson && c.contactPerson.toLowerCase().includes(search.toLowerCase()))
-  );
+    (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
+  ) : [];
 
   const handleAddClient = async () => {
     if (!formData.name || !formData.email) {
@@ -107,9 +113,8 @@ const Clients = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Client</TableHead>
-                  <TableHead>Contact Person</TableHead>
-                  <TableHead>Active Projects</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -123,16 +128,14 @@ const Clients = () => {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-foreground">{client.name}</p>
-                          <p className="text-xs text-muted-foreground">{client.industry}</p>
+                          <p className="text-xs text-muted-foreground">{client.company || 'N/A'}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <p className="text-sm text-foreground">{client.contactPerson}</p>
-                      <p className="text-xs text-muted-foreground">{client.email}</p>
+                      <p className="text-sm text-foreground">{client.email || 'N/A'}</p>
                     </TableCell>
-                    <TableCell className="text-sm">{client.activeProjects || 0} projects</TableCell>
-                    <TableCell><StatusBadge status={client.status} /></TableCell>
+                    <TableCell className="text-sm">{client.phone || 'N/A'}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" onClick={() => setSelectedClient(client)}>View</Button>
                     </TableCell>
@@ -153,13 +156,12 @@ const Clients = () => {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-foreground">{client.name}</p>
-                        <p className="text-xs text-muted-foreground">{client.industry}</p>
+                        <p className="text-xs text-muted-foreground">{client.company || 'N/A'}</p>
                       </div>
                     </div>
-                    <StatusBadge status={client.status} />
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <span>{client.activeProjects || 0} projects</span>
+                    <span>{client.email}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -179,19 +181,21 @@ const Clients = () => {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{selectedClient?.name}</DialogTitle>
-            <DialogDescription>{selectedClient?.industry}</DialogDescription>
+            <DialogDescription>{selectedClient?.company || 'Client Details'}</DialogDescription>
           </DialogHeader>
           {selectedClient && (
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="flex items-center gap-2 text-sm"><Mail className="h-4 w-4 text-muted-foreground" />{selectedClient.email}</div>
                 <div className="flex items-center gap-2 text-sm"><Phone className="h-4 w-4 text-muted-foreground" />{selectedClient.phone || 'N/A'}</div>
-                <div className="flex items-center gap-2 text-sm"><MapPin className="h-4 w-4 text-muted-foreground" />{selectedClient.location || 'N/A'}</div>
+                <div className="flex items-center gap-2 text-sm"><MapPin className="h-4 w-4 text-muted-foreground" />{selectedClient.address || 'N/A'}</div>
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-foreground mb-2">Contact Person</h4>
-                <p className="text-sm text-muted-foreground">{selectedClient.contactPerson || 'N/A'}</p>
-              </div>
+              {selectedClient.company && (
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-2">Company</h4>
+                  <p className="text-sm text-muted-foreground">{selectedClient.company}</p>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
@@ -214,15 +218,6 @@ const Clients = () => {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Company</label>
-              <input 
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
-                placeholder="Acme Corp" 
-                value={formData.company}
-                onChange={e => setFormData({...formData, company: e.target.value})}
-              />
-            </div>
-            <div>
               <label className="mb-1.5 block text-sm font-medium text-foreground">Email *</label>
               <input 
                 type="email" 
@@ -239,6 +234,15 @@ const Clients = () => {
                 placeholder="+63 9XX XXXX XXX" 
                 value={formData.phone}
                 onChange={e => setFormData({...formData, phone: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Company</label>
+              <input 
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
+                placeholder="Acme Corp" 
+                value={formData.company}
+                onChange={e => setFormData({...formData, company: e.target.value})}
               />
             </div>
             <div>

@@ -18,6 +18,7 @@ import AIInsights from "./pages/AIInsights";
 import Settings from "./pages/Settings";
 import Teams from "./pages/Teams";
 import Clients from "./pages/Clients";
+import Users from "./pages/Users";
 import NotFound from "./pages/NotFound";
 import DesignAssistant from "./pages/DesignAssistant";
 
@@ -48,6 +49,7 @@ const protectedRoutes = [
   // { path: "/ai-insights", element: <AIInsights /> },
   { path: "/teams", element: <Teams /> },
   { path: "/clients", element: <Clients /> },
+  { path: "/users", element: <Users /> },
   { path: "/tasks", element: <Dashboard /> },
   { path: "/uploads", element: <Dashboard /> },
   { path: "/timeline", element: <Dashboard /> },

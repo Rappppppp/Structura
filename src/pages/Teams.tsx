@@ -54,7 +54,7 @@ const Teams = () => {
 
       setFormData({ name: '', email: '', role: '' });
       setAddOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['teams'] });
+      queryClient.invalidateQueries({ queryKey: ['teamMembers'] });
       toast({ title: 'Success', description: 'Team member invited successfully' });
     } catch (err: any) {
       toast({ 

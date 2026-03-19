@@ -21,10 +21,37 @@ const AdminDashboard = () => {
   const { data: projectsData, isLoading: projectsLoading } = useProjects(undefined, 1, 12);
   const { data: statusData, isLoading: statusLoading } = useProjectStatusData();
   
-  const projects = projectsData?.data || [];
-  const chartData = Array.isArray(statusData?.data) ? statusData.data : (statusData?.data ? [statusData.data] : []);
+  // Extract projects array - handle both response structures
+  let projects = [];
+  if (Array.isArray(projectsData)) {
+    projects = projectsData;
+  } else if (projectsData?.data && Array.isArray(projectsData.data)) {
+    projects = projectsData.data;
+  }
   
-  const activeProjectsCount = projects.filter(p => p.status === 'active').length;
+  // Extract chart data from status analytics
+  // Status endpoint returns: { total_projects, active_projects, completed_projects, on_hold_projects }
+  // Convert to chart format if available, otherwise use placeholder
+  let chartData = [];
+  if (statusData) {
+    if (Array.isArray(statusData)) {
+      chartData = statusData;
+    } else if (statusData.data) {
+      if (Array.isArray(statusData.data)) {
+        chartData = statusData.data;
+      } else if (typeof statusData.data === 'object') {
+        // Convert analytics object to single month data
+        chartData = [{
+          month: 'Current',
+          active: (statusData.data as any).active_projects || 0,
+          completed: (statusData.data as any).completed_projects || 0,
+          onHold: (statusData.data as any).on_hold_projects || 0
+        }];
+      }
+    }
+  }
+  
+  const activeProjectsCount = Array.isArray(projects) ? projects.filter(p => p.status === 'active').length : 0;
   
   if (projectsLoading || statusLoading) {
     return <div className="text-center py-12">Loading dashboard...</div>;
@@ -86,10 +113,17 @@ const ArchitectDashboard = () => {
   const { toast } = useToast();
   const { data: tasksData, isLoading: tasksLoading } = useTasks();
   
-  const tasks = tasksData?.data || [];
+  // Extract tasks array - handle both response structures
+  let tasks = [];
+  if (Array.isArray(tasksData)) {
+    tasks = tasksData;
+  } else if (tasksData?.data && Array.isArray(tasksData.data)) {
+    tasks = tasksData.data;
+  }
+  
   const columns = { todo: 'To Do', 'in-progress': 'In Progress', done: 'Done' } as const;
   
-  const completedTasks = tasks.filter(t => t.status === 'done').length;
+  const completedTasks = Array.isArray(tasks) ? tasks.filter(t => t.status === 'done').length : 0;
   
   if (tasksLoading) {
     return <div className="text-center py-12">Loading tasks...</div>;

@@ -16,6 +16,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'Projects', path: '/projects', icon: FolderKanban },
     { label: 'Teams', path: '/teams', icon: Users },
     { label: 'Clients', path: '/clients', icon: Building2 },
+    { label: 'Users', path: '/users', icon: Grid3X3 },
     { label: 'Communication', path: '/communication', icon: MessageSquare },
     { label: 'Payments', path: '/payments', icon: CreditCard },
     { label: 'AI Design Assistant', path: '/ai-design-assistant', icon: PencilRuler },
@@ -40,6 +41,13 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'Design Uploads', path: '/uploads', icon: Upload },
     { label: 'Communication', path: '/communication', icon: MessageSquare },
     // { label: 'AI Assistant', path: '/ai-insights', icon: Brain },
+  ],
+  project_manager: [
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Projects', path: '/projects', icon: FolderKanban },
+    { label: 'Teams', path: '/teams', icon: Users },
+    { label: 'Communication', path: '/communication', icon: MessageSquare },
+    { label: 'Reports', path: '/reports', icon: BarChart3 },
   ],
   client: [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },

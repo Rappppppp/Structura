@@ -1,7 +1,6 @@
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useChatRooms, useMessages } from '@/hooks/queries/useCommunication';
 import { useSendMessageMutation } from '@/hooks/mutations/useCommunicationMutations';
-import { useQueryClient } from '@tanstack/react-query';
 import { Send, Paperclip, Brain, Search } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -15,7 +14,6 @@ const Communication = () => {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [message, setMessage] = useState('');
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const sendMessageMutation = useSendMessageMutation();
 
   const chatRooms = chatData?.data || [];

@@ -11,8 +11,8 @@ export interface Project {
 }
 
 export interface ProjectStatusData {
-  month: string;
-  active: number;
-  completed: number;
-  onHold: number;
+  total_projects: number;
+  active_projects: number;
+  completed_projects: number;
+  on_hold_projects: number;
 }

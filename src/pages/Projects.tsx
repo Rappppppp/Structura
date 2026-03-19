@@ -2,6 +2,7 @@ import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { useProjects } from '@/hooks/queries/useProjects';
+import { useClients } from '@/hooks/queries/useClients';
 import { useCreateProjectMutation } from '@/hooks/mutations/useProjectMutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Eye } from 'lucide-react';
@@ -15,26 +16,40 @@ const Projects = () => {
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    client: '',
+    client_id: '',
     budget: '',
-    deadline: ''
+    deadline_at: ''
   });
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
   const { data: projectsData, isLoading, error } = useProjects(undefined, 1, 100);
+  const { data: clientsData } = useClients(1, 100);
   const createProject = useCreateProjectMutation();
   
-  const projects = projectsData?.data || [];
+  // Extract projects array - handle both response structures
+  let projects = [];
+  if (Array.isArray(projectsData)) {
+    projects = projectsData;
+  } else if (projectsData?.data && Array.isArray(projectsData.data)) {
+    projects = projectsData.data;
+  }
+
+  let clients = [];
+  if (Array.isArray(clientsData)) {
+    clients = clientsData;
+  } else if (clientsData?.data && Array.isArray(clientsData.data)) {
+    clients = clientsData.data;
+  }
   
-  const filtered = projects.filter(p =>
+  const filtered = Array.isArray(projects) ? projects.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.client.toLowerCase().includes(search.toLowerCase())
-  );
+  ) : [];
 
   const handleCreateProject = async () => {
-    if (!formData.name || !formData.budget || !formData.deadline) {
+    if (!formData.name || !formData.client_id || !formData.budget || !formData.deadline_at) {
       toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
       return;
     }
@@ -42,13 +57,13 @@ const Projects = () => {
     try {
       await createProject.mutateAsync({
         name: formData.name,
-        client: formData.client || 'N/A',
+        client_id: formData.client_id,
         budget: parseFloat(formData.budget),
-        deadline: formData.deadline,
+        deadline_at: formData.deadline_at,
         status: 'active'
       });
       
-      setFormData({ name: '', client: '', budget: '', deadline: '' });
+      setFormData({ name: '', client_id: '', budget: '', deadline_at: '' });
       setNewProjectOpen(false);
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast({ title: 'Success', description: 'Project created successfully' });
@@ -163,13 +178,17 @@ const Projects = () => {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
-              <input 
-                placeholder="e.g. Urban Dev Corp" 
-                value={formData.client}
-                onChange={e => setFormData({...formData, client: e.target.value})}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
-              />
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Client *</label>
+              <select
+                value={formData.client_id}
+                onChange={e => setFormData({ ...formData, client_id: e.target.value })}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+              >
+                <option value="">Select a client...</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>{client.name}</option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -186,8 +205,8 @@ const Projects = () => {
                 <label className="mb-1.5 block text-sm font-medium text-foreground">Deadline *</label>
                 <input 
                   type="date" 
-                  value={formData.deadline}
-                  onChange={e => setFormData({...formData, deadline: e.target.value})}
+                  value={formData.deadline_at}
+                  onChange={e => setFormData({...formData, deadline_at: e.target.value})}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" 
                 />
               </div>

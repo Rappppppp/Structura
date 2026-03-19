@@ -34,35 +34,99 @@ export const communicationService = {
    * Get all chat rooms
    */
   getChatRooms: (): Promise<ChatRoomsListResponse> =>
-    apiRequest.get('/chat-rooms'),
+    apiRequest.get('/communication').then((response: any) => ({
+      ...response,
+      data: Array.isArray(response?.data)
+        ? response.data.map((room: any) => ({
+            id: Number(room.id),
+            name: room.name,
+            lastMessage: room.last_message || '',
+            time: room.last_message_at ? new Date(room.last_message_at).toLocaleTimeString() : '',
+            unread: 0,
+          }))
+        : [],
+    })),
 
   /**
    * Get messages for a specific chat room
    */
   getMessages: (chatRoomId: string, params?: { page?: number; perPage?: number }): Promise<MessagesListResponse> =>
-    apiRequest.get(`/chat-rooms/${chatRoomId}/messages`, { params }),
+    apiRequest.get(`/communication/${chatRoomId}`, {
+      params: {
+        page: params?.page,
+        per_page: params?.perPage,
+      },
+    }).then((response: any) => ({
+      data: Array.isArray(response?.data?.messages)
+        ? response.data.messages.map((message: any) => ({
+            id: message.id,
+            content: message.message,
+            created_at: message.created_at,
+            user: message.user || null,
+          }))
+        : [],
+    })),
 
   /**
    * Send message to chat room
    */
   sendMessage: (data: CreateMessageRequest): Promise<{ data: any }> =>
-    apiRequest.post('/messages', data),
+    apiRequest.post(`/communication/${data.chat_room_id}/messages`, { content: data.content }),
 
   /**
    * Create new chat room
    */
   createChatRoom: (data: CreateChatRoomRequest): Promise<{ data: ChatRoom }> =>
-    apiRequest.post('/chat-rooms', data),
+    apiRequest.post('/admin/chat-rooms', {
+      name: data.name,
+      project_id: data.project_id,
+    }).then((response: any) => ({
+      ...response,
+      data: {
+        id: Number(response?.data?.id),
+        name: response?.data?.name,
+        lastMessage: response?.data?.last_message || '',
+        time: response?.data?.last_message_at ? new Date(response.data.last_message_at).toLocaleTimeString() : '',
+        unread: 0,
+      },
+    })),
 
   /**
    * Get timeline events for a project
    */
   getTimeline: (projectId: string, params?: { limit?: number }): Promise<TimelineListResponse> =>
-    apiRequest.get(`/projects/${projectId}/timeline`, { params }),
+    apiRequest.get('/admin/timeline-events', {
+      params: {
+        per_page: params?.limit,
+      },
+    }).then((response: any) => ({
+      ...response,
+      data: Array.isArray(response?.data)
+        ? response.data
+            .filter((event: any) => String(event.project_id) === String(projectId))
+            .map((event: any) => ({
+              date: event.event_date ? new Date(event.event_date).toLocaleDateString() : '',
+              title: event.title,
+              description: event.description || '',
+            }))
+        : [],
+    })),
 
   /**
    * Create timeline event
    */
   createTimelineEvent: (projectId: string, data: any): Promise<{ data: TimelineEvent }> =>
-    apiRequest.post(`/projects/${projectId}/timeline`, data),
+    apiRequest.post('/admin/timeline-events', {
+      project_id: projectId,
+      title: data?.title,
+      description: data?.description,
+      event_date: data?.event_date || new Date().toISOString(),
+    }).then((response: any) => ({
+      ...response,
+      data: {
+        date: response?.data?.event_date ? new Date(response.data.event_date).toLocaleDateString() : '',
+        title: response?.data?.title,
+        description: response?.data?.description || '',
+      },
+    })),
 };

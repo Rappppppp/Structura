@@ -3,6 +3,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { useInvoices } from '@/hooks/queries/useInvoices';
 import { useProjects } from '@/hooks/queries/useProjects';
+import { useClients } from '@/hooks/queries/useClients';
 import { useCreateInvoiceMutation } from '@/hooks/mutations/useInvoiceMutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Upload, FileText, ClipboardList } from 'lucide-react';
@@ -27,10 +28,24 @@ const Payments = () => {
 
   const { data: invoicesData, isLoading: invoicesLoading } = useInvoices();
   const { data: projectsData } = useProjects(undefined, 1, 100);
+  const { data: clientsData } = useClients(1, 100);
   const createInvoice = useCreateInvoiceMutation();
 
   const invoices = invoicesData?.data || [];
-  const projects = projectsData?.data || [];
+
+  let projects = [];
+  if (Array.isArray(projectsData)) {
+    projects = projectsData;
+  } else if (projectsData?.data && Array.isArray(projectsData.data)) {
+    projects = projectsData.data;
+  }
+
+  let clients = [];
+  if (Array.isArray(clientsData)) {
+    clients = clientsData;
+  } else if (clientsData?.data && Array.isArray(clientsData.data)) {
+    clients = clientsData.data;
+  }
 
   const handleGenerateInvoice = async () => {
     if (!invoiceForm.project_id || !invoiceForm.client_id || !invoiceForm.amount || !invoiceForm.due_date) {
@@ -201,12 +216,16 @@ const Payments = () => {
               <label className="mb-1.5 block text-sm font-medium">
                 Client *
               </label>
-              <input
-                placeholder="Client ID or name"
+              <select
                 value={invoiceForm.client_id}
                 onChange={e => setInvoiceForm({...invoiceForm, client_id: e.target.value})}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              />
+              >
+                <option value="">Select a client...</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
             </div>
 
             <div>
