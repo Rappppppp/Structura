@@ -2,6 +2,13 @@ import { User } from './auth';
 
 export type ClientStatus = 'active' | 'inactive' | 'archived';
 
+export interface Project {
+  id: string;
+  name: string;
+  status?: string;
+  budget?: number;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -15,6 +22,7 @@ export interface Client {
   status: ClientStatus;
   account_owner?: User;
   account_owner_id?: string;
+  projects?: Project[];
   created_at?: string;
   updated_at?: string;
 }

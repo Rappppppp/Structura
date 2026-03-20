@@ -44,7 +44,9 @@ const DashboardContent = () => {
 
   const activeProjectsCount = projects.filter((project) => project.status === 'active').length;
   const completedProjectsCount = projects.filter((project) => project.status === 'completed').length;
-  const onHoldProjects = projects.filter((project) => project.status === 'on_hold').length;
+  const onHoldProjects = projects.filter((project) => project.status === 'on-hold').length;
+  const reviewProjectsCount = projects.filter((project) => project.status === 'review').length;
+  const cancelledProjectsCount = projects.filter((project) => project.status === 'cancelled').length;
   const pendingTasksCount = tasks.filter((task) => task.status !== 'done').length;
   const completedTasksCount = tasks.filter((task) => task.status === 'done').length;
   const pendingInvoices = invoices.filter((invoice) => invoice.status !== 'paid');
@@ -62,19 +64,23 @@ const DashboardContent = () => {
     .slice(0, 5);
 
   const analytics = statusData?.data;
-  const chartData = analytics
-    ? [{
-        name: 'Project Status',
-        active: analytics.active_projects || 0,
-        completed: analytics.completed_projects || 0,
-        onHold: analytics.on_hold_projects || 0,
-      }]
-    : [];
+  const chartData = [
+    {
+      name: 'Project Status',
+      active: activeProjectsCount,
+      completed: completedProjectsCount,
+      onHold: onHoldProjects,
+      review: reviewProjectsCount,
+      cancelled: cancelledProjectsCount,
+    }
+  ];
 
   const pieChartData = [
     { name: 'Active', value: activeProjectsCount, color: 'hsl(217 91% 50%)' },
     { name: 'Completed', value: completedProjectsCount, color: 'hsl(162 63% 41%)' },
     { name: 'On Hold', value: onHoldProjects, color: 'hsl(43 96% 56%)' },
+    { name: 'Review', value: reviewProjectsCount, color: 'hsl(271 91% 55%)' },
+    { name: 'Cancelled', value: cancelledProjectsCount, color: 'hsl(0 84% 60%)' },
   ].filter(item => item.value > 0);
 
   // Activity feed items
@@ -225,6 +231,8 @@ const DashboardContent = () => {
               <Bar dataKey="active" fill="hsl(217 91% 50%)" radius={[4, 4, 0, 0]} name="Active" />
               <Bar dataKey="completed" fill="hsl(162 63% 41%)" radius={[4, 4, 0, 0]} name="Completed" />
               <Bar dataKey="onHold" fill="hsl(43 96% 56%)" radius={[4, 4, 0, 0]} name="On Hold" />
+              <Bar dataKey="review" fill="hsl(271 91% 55%)" radius={[4, 4, 0, 0]} name="Review" />
+              <Bar dataKey="cancelled" fill="hsl(0 84% 60%)" radius={[4, 4, 0, 0]} name="Cancelled" />
             </BarChart>
           </ResponsiveContainer>
         </div>

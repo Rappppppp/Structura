@@ -31,6 +31,7 @@ const emptyForm = {
     assigned_to: '',
     due_at: '',
     status: 'todo' as TaskStatus,
+    work_percentage: 0,
 };
 
 function initials(name: string): string {
@@ -137,6 +138,7 @@ const Tasks = ({ projectId }: TasksProps) => {
             assigned_to: task.assigneeId || '',
             due_at: task.dueAt ? task.dueAt.substring(0, 10) : '',
             status: task.status,
+            work_percentage: task.workPercentage || 0,
         });
         setEditOpen(true);
     };
@@ -144,15 +146,19 @@ const Tasks = ({ projectId }: TasksProps) => {
     const handleEdit = async () => {
         if (!editingTask || !editForm.title.trim()) { toast({ title: 'Title is required', variant: 'destructive' }); return; }
         try {
+            // Auto-set status to 'done' if work_percentage reaches 100%
+            const finalStatus = editForm.work_percentage >= 100 ? 'done' : editForm.status;
+            
             await updateTask.mutateAsync({
                 id: String(editingTask.id),
                 data: {
                     title: editForm.title,
                     description: editForm.description || undefined,
-                    status: editForm.status,
+                    status: finalStatus,
                     priority: editForm.priority,
                     assigned_to: editForm.assigned_to || undefined,
                     due_at: editForm.due_at || undefined,
+                    work_percentage: editForm.work_percentage,
                 },
             });
             setEditOpen(false);
@@ -505,11 +511,18 @@ const TaskForm = ({ form, setForm, users, showStatusField }: TaskFormProps) => {
                 </div>
                 {showStatusField && (
                     <div>
-                        <label className={labelClass}>Status</label>
+                        <label className={labelClass}>
+                            Status
+                            {form.work_percentage >= 100 && (
+                                <span className="ml-2 text-xs font-semibold text-success">→ Will change to Done</span>
+                            )}
+                        </label>
                         <select
                             className={inputClass}
                             value={form.status}
                             onChange={e => setForm({ ...form, status: e.target.value as TaskStatus })}
+                            disabled={form.work_percentage >= 100}
+                            title={form.work_percentage >= 100 ? "Status is auto-set to 'Done' when work reaches 100%" : ""}
                         >
                             <option value="todo">To Do</option>
                             <option value="in-progress">In Progress</option>
@@ -553,6 +566,22 @@ const TaskForm = ({ form, setForm, users, showStatusField }: TaskFormProps) => {
                     ))}
                 </select>
             </div>
+            {showStatusField && (
+                <div>
+                    <label className={labelClass}>Work Progress (%)</label>
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            className="flex-1 h-2 rounded-full bg-input appearance-none cursor-pointer"
+                            value={form.work_percentage || 0}
+                            onChange={e => setForm({ ...form, work_percentage: Number(e.target.value) })}
+                        />
+                        <span className="text-sm font-medium text-foreground min-w-[40px]">{form.work_percentage || 0}%</span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

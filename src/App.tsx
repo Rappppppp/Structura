@@ -15,7 +15,9 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Teams from "./pages/Teams";
 import Clients from "./pages/Clients";
+import ClientDetail from "./pages/ClientDetail";
 import Users from "./pages/Users";
+import UserDetail from "./pages/UserDetail";
 import Attendance from "./pages/Attendance";
 import AdminAttendance from "./pages/AdminAttendance";
 import NotFound from "./pages/NotFound";
@@ -48,7 +50,9 @@ const protectedRoutes = [
   // { path: "/ai-insights", element: <AIInsights /> },
   { path: "/teams", element: <Teams /> },
   { path: "/clients", element: <Clients /> },
+  { path: "/clients/:id", element: <ClientDetail /> },
   { path: "/users", element: <Users /> },
+  { path: "/users/:id", element: <UserDetail /> },
   { path: "/tasks", element: <Projects /> },
   { path: "/uploads", element: <Projects /> },
   { path: "/timeline", element: <Projects /> },

@@ -14,6 +14,7 @@ export interface CreateTaskRequest {
   priority?: 'low' | 'medium' | 'high';
   assigned_to?: string;
   due_at?: string;
+  work_percentage?: number;
 }
 
 export interface UpdateTaskRequest {
@@ -23,6 +24,7 @@ export interface UpdateTaskRequest {
   priority?: 'low' | 'medium' | 'high';
   assigned_to?: string;
   due_at?: string;
+  work_percentage?: number;
 }
 
 export interface TasksListResponse {
@@ -41,6 +43,7 @@ const mapTask = (task: any): KanbanTask => ({
   priority: task.priority || 'low',
   assignee: task.assignee?.name || 'Unassigned',
   assigneeId: task.assigned_to || task.assignee?.id,
+  workPercentage: task.work_percentage || 0,
   dueAt: task.due_at || undefined,
   createdAt: task.created_at || undefined,
 });

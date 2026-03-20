@@ -183,7 +183,6 @@ const Users = () => {
   };
 
   const openEditModal = (user: User) => {
-    setSelectedUser(user);
     setFormData({
       name: user.name,
       email: user.email,

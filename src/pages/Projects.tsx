@@ -194,33 +194,42 @@ const Projects = () => {
 
       {/* New Project Dialog */}
       <Dialog open={newProjectOpen} onOpenChange={setNewProjectOpen}>
-        <DialogContent className="border border-border/50 shadow-xl">
+        <DialogContent className="max-w-2xl border border-border/50 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl">Create New Project</DialogTitle>
-            <DialogDescription className="text-muted-foreground">Add a new architecture project to your portfolio.</DialogDescription>
+            <DialogTitle className="text-2xl font-bold">Create New Project</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground mt-1">
+              Add a new architecture project to your portfolio.
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4 max-h-96 overflow-y-auto">
+          <div className="space-y-6 py-6 overflow-y-auto max-h-[calc(100vh-200px)]">
             {/* Project Name */}
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-foreground">Project Name *</label>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Project Name *</label>
               <input
                 placeholder="e.g. Central Park Tower"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="h-11 w-full rounded-lg border border-border/50 bg-background/50 px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
               />
             </div>
 
             {/* Clients */}
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-foreground">Clients * (select at least one)</label>
-              <div className="border border-border/50 rounded-lg bg-background/50 p-3 space-y-2 max-h-40 overflow-y-auto">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-foreground">Select Clients *</label>
+                {formData.client_ids.length > 0 && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                    {formData.client_ids.length} selected
+                  </span>
+                )}
+              </div>
+              <div className="border border-input rounded-md bg-background/50 p-3 space-y-2 max-h-48 overflow-y-auto">
                 {clients.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No clients available</p>
+                  <p className="text-sm text-muted-foreground py-4 text-center">No clients available</p>
                 ) : (
                   clients.map((client) => (
-                    <label key={client.id} className="flex items-center gap-3 cursor-pointer hover:bg-background/50 p-2 rounded">
+                    <label key={client.id} className="flex items-center gap-3 cursor-pointer hover:bg-background/80 p-2 rounded transition-colors">
                       <input
                         type="checkbox"
                         checked={formData.client_ids.includes(client.id)}
@@ -231,83 +240,90 @@ const Projects = () => {
                             setFormData({ ...formData, client_ids: formData.client_ids.filter((id) => id !== client.id) });
                           }
                         }}
-                        className="rounded border-border/50 cursor-pointer"
+                        className="rounded border-input cursor-pointer accent-primary"
                       />
-                      <span className="text-sm text-foreground">{client.name}</span>
+                      <span className="text-sm text-foreground font-medium flex-1">{client.name}</span>
                     </label>
                   ))
                 )}
               </div>
-              {formData.client_ids.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-2">{formData.client_ids.length} client(s) selected</p>
-              )}
             </div>
 
             {/* Budget & Deadline */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-foreground">Budget (₱) *</label>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">Budget (₱) *</label>
                 <input
                   type="number"
                   placeholder="5000000"
                   value={formData.budget}
                   onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                  className="h-11 w-full rounded-lg border border-border/50 bg-background/50 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 />
               </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-foreground">Deadline *</label>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">Deadline *</label>
                 <input
                   type="date"
                   value={formData.deadline_at}
                   onChange={(e) => setFormData({ ...formData, deadline_at: e.target.value })}
-                  className="h-11 w-full rounded-lg border border-border/50 bg-background/50 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 />
               </div>
             </div>
 
             {/* Team Assignments */}
-            <div className="rounded-lg border border-border/50 bg-background/30 p-4">
-              <p className="mb-3 text-sm font-semibold text-foreground">Initial Team Members (optional)</p>
+            <div className="space-y-3 border-t border-border pt-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">Team Members (optional)</h3>
+                {teamAssignments.length > 0 && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
+                    {teamAssignments.length} added
+                  </span>
+                )}
+              </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row sm:gap-2 mb-3">
-                <select
-                  value={newAssignment.user_id}
-                  onChange={(e) => setNewAssignment({ ...newAssignment, user_id: e.target.value })}
-                  className="h-11 flex-1 rounded-lg border border-border/50 bg-background/50 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-                >
-                  <option value="">Select a user...</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>{user.name} — {user.email}</option>
-                  ))}
-                </select>
+              {/* Add Team Member */}
+              <div className="space-y-3 p-4 rounded-lg bg-muted/30 border border-border">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                  <select
+                    value={newAssignment.user_id}
+                    onChange={(e) => setNewAssignment({ ...newAssignment, user_id: e.target.value })}
+                    className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all col-span-1 sm:col-span-2"
+                  >
+                    <option value="">Select user...</option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>{user.name}</option>
+                    ))}
+                  </select>
 
-                <select
-                  value={newAssignment.base_role}
-                  onChange={(e) => setNewAssignment({ ...newAssignment, base_role: e.target.value as BaseRole })}
-                  className="h-11 flex-1 rounded-lg border border-border/50 bg-background/50 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-                >
-                  <option value="member">Member</option>
-                  <option value="admin">Admin</option>
-                  <option value="viewer">Viewer</option>
-                </select>
+                  <select
+                    value={newAssignment.base_role}
+                    onChange={(e) => setNewAssignment({ ...newAssignment, base_role: e.target.value as BaseRole })}
+                    className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  >
+                    <option value="member">Member</option>
+                    <option value="admin">Admin</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
 
-                <select
-                  value={newAssignment.specialty_role}
-                  onChange={(e) => setNewAssignment({ ...newAssignment, specialty_role: e.target.value })}
-                  className="h-11 flex-1 rounded-lg border border-border/50 bg-background/50 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-                >
-                  <option value="">No specialty</option>
-                  <option value="architect">Architect</option>
-                  <option value="engineer">Engineer</option>
-                  <option value="pm">Project Manager</option>
-                  <option value="bim">BIM Specialist</option>
-                </select>
+                  <select
+                    value={newAssignment.specialty_role}
+                    onChange={(e) => setNewAssignment({ ...newAssignment, specialty_role: e.target.value })}
+                    className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all sm:col-span-1"
+                  >
+                    <option value="">Specialty...</option>
+                    <option value="architect">Architect</option>
+                    <option value="engineer">Engineer</option>
+                    <option value="pm">PM</option>
+                    <option value="bim">BIM</option>
+                  </select>
+                </div>
 
                 <Button
                   type="button"
-                  variant="outline"
-                  className="border-border/50 h-11"
+                  variant="secondary"
+                  className="w-full h-10"
                   onClick={() => {
                     if (!newAssignment.user_id || !newAssignment.base_role) return;
                     if (teamAssignments.some((a) => a.user_id === newAssignment.user_id)) return;
@@ -315,23 +331,27 @@ const Projects = () => {
                     setNewAssignment({ user_id: '', base_role: 'member', specialty_role: '' });
                   }}
                 >
-                  Add
+                  Add Member
                 </Button>
               </div>
 
+              {/* Team List */}
               {teamAssignments.length > 0 && (
                 <div className="space-y-2">
                   {teamAssignments.map((assignment) => {
                     const selectedUser = users.find((u) => u.id === assignment.user_id);
                     return (
-                      <div key={assignment.user_id} className="flex items-center justify-between rounded-lg border border-border/50 bg-background/30 px-4 py-2 text-sm hover:bg-background/50 transition-colors">
-                        <span className="text-foreground font-medium">
-                          {selectedUser?.name || assignment.user_id} — {assignment.base_role}{assignment.specialty_role ? ` (${assignment.specialty_role})` : ''}
-                        </span>
+                      <div key={assignment.user_id} className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2.5 text-sm hover:bg-muted/30 transition-all">
+                        <div className="flex-1">
+                          <p className="text-foreground font-medium">{selectedUser?.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {assignment.base_role}{assignment.specialty_role ? ` • ${assignment.specialty_role}` : ''}
+                          </p>
+                        </div>
                         <button
                           type="button"
                           onClick={() => setTeamAssignments(teamAssignments.filter((item) => item.user_id !== assignment.user_id))}
-                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          className="ml-2 text-muted-foreground hover:text-destructive transition-colors p-1"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -343,9 +363,9 @@ const Projects = () => {
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 border-t border-border pt-4">
             <Button variant="outline" onClick={() => setNewProjectOpen(false)}>Cancel</Button>
-            <Button className="bg-gradient-to-r from-primary to-primary/80" onClick={handleCreateProject} disabled={createProject.isPending}>
+            <Button className="bg-primary hover:bg-primary/90" onClick={handleCreateProject} disabled={createProject.isPending}>
               {createProject.isPending ? 'Creating...' : 'Create Project'}
             </Button>
           </DialogFooter>

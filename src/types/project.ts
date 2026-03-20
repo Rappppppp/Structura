@@ -1,7 +1,7 @@
 import { User } from './auth';
 import { Client } from './client';
 
-export type ProjectStatus = 'active' | 'review' | 'completed' | 'on-hold';
+export type ProjectStatus = 'active' | 'review' | 'completed' | 'on-hold' | 'cancelled';
 export type BaseRole = 'admin' | 'member' | 'viewer';
 export type SpecialtyRole = 'architect' | 'engineer' | 'pm' | 'bim' | string;
 

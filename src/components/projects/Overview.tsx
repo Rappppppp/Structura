@@ -49,6 +49,17 @@ export const Overview = ({ project, projectId }: OverviewProps) => {
                         <div className="h-3 rounded-full bg-muted/40">
                             <div className="h-3 rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all shadow-sm" style={{ width: `${project.progress}%` }} />
                         </div>
+                        {project.progress === 100 && project.status !== 'completed' && (
+                            <div className="mt-3 p-3 rounded-lg bg-success/10 border border-success/30">
+                                <p className="text-sm font-semibold text-success">🎉 Project Ready to Complete!</p>
+                                <p className="text-xs text-success/80">All work is done. Click the status badge to mark as completed.</p>
+                            </div>
+                        )}
+                        {project.status === 'completed' && (
+                            <div className="mt-3 p-3 rounded-lg bg-success/10 border border-success/30">
+                                <p className="text-sm font-semibold text-success">✓ Project Completed</p>
+                            </div>
+                        )}
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-8">
                         <div className="rounded-lg border border-primary/20 bg-white p-4">

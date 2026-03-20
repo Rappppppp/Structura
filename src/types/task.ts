@@ -20,6 +20,7 @@ export interface Task {
   assigned_to?: string;
   status: TaskStatus;
   priority: TaskPriority;
+  work_percentage?: number;
   due_at?: string;
   created_at?: string;
   updated_at?: string;
@@ -46,6 +47,7 @@ export interface KanbanTask {
   priority: TaskPriority;
   assignee: string;
   assigneeId?: string;
+  workPercentage?: number;
   dueAt?: string;
   createdAt?: string;
 }
