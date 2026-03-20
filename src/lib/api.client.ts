@@ -4,9 +4,9 @@
  */
 
 import axios, { AxiosError, AxiosInstance } from 'axios';
+import { tokenStorage } from './token';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-const JWT_TOKEN_KEY = 'jwt_token';
 
 /**
  * Create an Axios instance with JWT token-based auth
@@ -26,27 +26,47 @@ const createApiClient = (): AxiosInstance => {
    */
   client.interceptors.request.use(
     (config) => {
-      const token = localStorage.getItem(JWT_TOKEN_KEY);
+      const token = tokenStorage.getToken();
       
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
+      // Log all requests for debugging
+      console.log(`📡 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+        headers: config.headers,
+        data: config.data ? (typeof config.data === 'string' ? `${config.data.substring(0, 100)}...` : config.data) : null,
+      });
+
       return config;
     },
-    (error) => Promise.reject(error)
+    (error) => {
+      console.error('❌ Request error:', error);
+      return Promise.reject(error);
+    }
   );
 
   /**
    * Response interceptor: Handle authentication and authorization errors
    */
   client.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      console.log(`✅ API Response: ${response.status} ${response.config.url}`, {
+        data: response.data,
+      });
+      return response;
+    },
     (error: AxiosError) => {
+      console.error(`❌ API Error: ${error.response?.status} ${error.config?.url}`, {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+
       // Handle 401 Unauthorized - token expired or invalid
       if (error.response?.status === 401) {
         // Clear stored token
-        localStorage.removeItem(JWT_TOKEN_KEY);
+        tokenStorage.clearToken();
         
         // Dispatch logout event that AuthContext listens to
         const event = new CustomEvent('auth:logout', {
@@ -74,14 +94,14 @@ export const apiClient = createApiClient();
  * Call this after successful login
  */
 export const setToken = (token: string): void => {
-  localStorage.setItem(JWT_TOKEN_KEY, token);
+  tokenStorage.setToken(token);
 };
 
 /**
  * Retrieve stored JWT token
  */
 export const getToken = (): string | null => {
-  return localStorage.getItem(JWT_TOKEN_KEY);
+  return tokenStorage.getToken();
 };
 
 /**
@@ -89,26 +109,26 @@ export const getToken = (): string | null => {
  * Call this on logout
  */
 export const clearToken = (): void => {
-  localStorage.removeItem(JWT_TOKEN_KEY);
+  tokenStorage.clearToken();
 };
 
 /**
  * Generic API request function with error handling
  */
 export const apiRequest = {
-  get: <T = any>(url: string, config = {}) =>
+  get: <T = unknown>(url: string, config = {}) =>
     apiClient.get<T>(url, config).then((res) => res.data),
 
-  post: <T = any>(url: string, data?: any, config = {}) =>
+  post: <T = unknown>(url: string, data?: unknown, config = {}) =>
     apiClient.post<T>(url, data, config).then((res) => res.data),
 
-  put: <T = any>(url: string, data?: any, config = {}) =>
+  put: <T = unknown>(url: string, data?: unknown, config = {}) =>
     apiClient.put<T>(url, data, config).then((res) => res.data),
 
-  patch: <T = any>(url: string, data?: any, config = {}) =>
+  patch: <T = unknown>(url: string, data?: unknown, config = {}) =>
     apiClient.patch<T>(url, data, config).then((res) => res.data),
 
-  delete: <T = any>(url: string, config = {}) =>
+  delete: <T = unknown>(url: string, config = {}) =>
     apiClient.delete<T>(url, config).then((res) => res.data),
 };
 

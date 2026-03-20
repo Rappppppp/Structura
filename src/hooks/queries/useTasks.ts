@@ -28,3 +28,15 @@ export const useTask = (taskId: string | undefined | null) => {
     staleTime: 0,
   });
 };
+
+/**
+ * Hook to fetch comments for a task
+ */
+export const useTaskComments = (taskId: string | undefined | null) => {
+  return useQuery({
+    queryKey: ['tasks', taskId, 'comments'],
+    queryFn: () => taskService.getComments(taskId!),
+    enabled: !!taskId,
+    staleTime: 0,
+  });
+};

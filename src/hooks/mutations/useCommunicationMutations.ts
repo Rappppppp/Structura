@@ -14,9 +14,12 @@ export const useSendMessageMutation = () => {
   return useMutation({
     mutationFn: (data: CreateMessageRequest) => communicationService.sendMessage(data),
     onSuccess: (_, variables) => {
-      // Invalidate messages for this chat room
       queryClient.invalidateQueries({
         queryKey: ['messages', variables.chat_room_id],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ['chatRooms'],
       });
     },
   });

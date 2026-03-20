@@ -6,9 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { QuickAction } from '@/types/quickaction';
 import { useQuickActionStore } from '@/stores/project.detailed.quickaction.store';
+import { useProjectTeam } from '@/hooks/queries/useProjectTeam';
 
 interface OverviewProps {
     project: Project;
+    projectId?: string;
 }
 
 export const quickActions: QuickAction[] = [
@@ -18,10 +20,12 @@ export const quickActions: QuickAction[] = [
     // { label: 'AI Analysis', icon: Brain, dialogTitle: 'AI Project Analysis', dialogDesc: 'Run AI-powered analysis on project data and progress.' },
 ];
 
-export const Overview = ({ project }: OverviewProps) => {
+export const Overview = ({ project, projectId }: OverviewProps) => {
     
     const { activeAction, setActiveAction } = useQuickActionStore();
     const { toast } = useToast();
+    const { data: teamData } = useProjectTeam(projectId);
+    const teamCount = teamData?.data?.length || 0;
 
     const handleActionSubmit = () => {
         const name = activeAction?.label;
@@ -32,85 +36,100 @@ export const Overview = ({ project }: OverviewProps) => {
     return (
         <>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <div className="rounded-lg border border-border bg-card p-6 lg:col-span-2">
-                    <h3 className="text-base font-semibold text-card-foreground mb-4">Project Progress</h3>
-                    <div className="mb-4">
-                        <div className="flex justify-between text-sm mb-1.5">
-                            <span className="text-muted-foreground">Overall Completion</span>
-                            <span className="font-semibold text-foreground">{project.progress}%</span>
+                <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6 lg:col-span-2 shadow-sm">
+                    <div className="flex items-center gap-2 mb-6">
+                        <div className="h-1 w-8 rounded-full bg-primary"></div>
+                        <h3 className="text-lg font-bold text-primary">Project Progress</h3>
+                    </div>
+                    <div className="mb-6">
+                        <div className="flex justify-between text-sm mb-2">
+                            <span className="text-foreground font-medium">Overall Completion</span>
+                            <span className="font-bold text-primary text-base">{project.progress}%</span>
                         </div>
-                        <div className="h-3 rounded-full bg-muted">
-                            <div className="h-3 rounded-full bg-primary transition-all" style={{ width: `${project.progress}%` }} />
+                        <div className="h-3 rounded-full bg-muted/40">
+                            <div className="h-3 rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all shadow-sm" style={{ width: `${project.progress}%` }} />
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 mt-6">
-                        <div className="rounded-md border border-border p-4">
-                            <p className="text-xs text-muted-foreground">Budget</p>
-                            <p className="text-xl font-bold text-foreground">₱{(project.budget / 1000000).toFixed(1)}M</p>
+                    <div className="grid grid-cols-2 gap-4 mt-8">
+                        <div className="rounded-lg border border-primary/20 bg-white p-4">
+                            <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2">Budget</p>
+                            <p className="text-2xl font-bold text-primary">₱{Number(project.budget || 0).toLocaleString()}</p>
                         </div>
-                        <div className="rounded-md border border-border p-4">
-                            <p className="text-xs text-muted-foreground">Team Size</p>
-                            <p className="text-xl font-bold text-foreground">5 Members</p>
+                        <div className="rounded-lg border border-success/20 bg-white p-4">
+                            <p className="text-xs font-bold text-success uppercase tracking-wider mb-2">Team Size</p>
+                            <p className="text-2xl font-bold text-success">{teamCount} {teamCount === 1 ? 'Member' : 'Members'}</p>
                         </div>
                     </div>
                 </div>
-                <div className="rounded-lg border border-border bg-card p-6">
-                    <h3 className="text-base font-semibold text-card-foreground mb-4">Quick Actions</h3>
+                <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6 shadow-sm">
+                    <div className="flex items-center gap-2 mb-6">
+                        <div className="h-1 w-8 rounded-full bg-primary"></div>
+                        <h3 className="text-lg font-bold text-primary">Quick Actions</h3>
+                    </div>
                     <div className="space-y-2">
-                        {quickActions.map(action => (
-                            <button
-                                key={action.label}
-                                onClick={() => setActiveAction(action)}
-                                className="w-full flex items-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors text-left"
-                            >
-                                <action.icon className="h-4 w-4 text-muted-foreground" />
-                                {action.label}
-                            </button>
-                        ))}
+                        {quickActions.map((action, idx) => {
+                            const colors = ['from-primary', 'from-success', 'from-warning'];
+                            const bgColors = ['bg-primary/10', 'bg-success/10', 'bg-warning/10'];
+                            const textColors = ['text-primary', 'text-success', 'text-warning'];
+                            return (
+                                <button
+                                    key={action.label}
+                                    onClick={() => setActiveAction(action)}
+                                    className={`w-full flex items-center gap-3 rounded-lg ${bgColors[idx]} border border-current/20 px-4 py-3 text-sm font-semibold ${textColors[idx]} hover:shadow-md hover:scale-105 transition-all duration-200 text-left`}
+                                >
+                                    <div className={`h-8 w-8 rounded-md bg-gradient-to-br ${colors[idx]} from-current/20 to-transparent flex items-center justify-center`}>
+                                        <action.icon className="h-4 w-4" />
+                                    </div>
+                                    <span>{action.label}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
 
             <Dialog open={!!activeAction} onOpenChange={(open) => !open && setActiveAction(null)}>
-                <DialogContent>
+                <DialogContent className="border-primary/20">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            {activeAction && <activeAction.icon className="h-5 w-5 text-primary" />}
-                            {activeAction?.dialogTitle}
+                        <DialogTitle className="flex items-center gap-3 text-2xl">
+                            {activeAction && <activeAction.icon className="h-6 w-6 text-primary" />}
+                            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{activeAction?.dialogTitle}</span>
                         </DialogTitle>
-                        <DialogDescription>{activeAction?.dialogDesc}</DialogDescription>
+                        <DialogDescription className="text-base text-foreground">{activeAction?.dialogDesc}</DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
+                    <div className="py-6">
                         {activeAction?.label === 'Upload Blueprint' && (
-                            <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 cursor-pointer hover:border-primary/40 transition-colors">
-                                <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                                <p className="text-sm font-medium text-muted-foreground">Click to upload or drag & drop</p>
-                                <p className="text-xs text-muted-foreground mt-1">DWG, PDF, PNG up to 50MB</p>
+                            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent p-12 cursor-pointer hover:border-primary/60 hover:shadow-md transition-all">
+                                <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                                    <Upload className="h-8 w-8 text-primary" />
+                                </div>
+                                <p className="text-base font-semibold text-foreground">Click to upload or drag & drop</p>
+                                <p className="text-sm text-muted-foreground mt-2">DWG, PDF, PNG up to 50MB</p>
                             </div>
                         )}
                         {activeAction?.label === 'Schedule Meeting' && (
-                            <div className="space-y-4">
+                            <div className="space-y-5">
                                 <div>
-                                    <label className="mb-1.5 block text-sm font-medium text-foreground">Meeting Title</label>
-                                    <input placeholder="e.g. Design Review" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                                    <label className="mb-2 block text-sm font-bold text-foreground">Meeting Title</label>
+                                    <input placeholder="e.g. Design Review" className="h-11 w-full rounded-lg border border-primary/20 bg-white px-4 text-base font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all" />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="mb-1.5 block text-sm font-medium text-foreground">Date</label>
-                                        <input type="date" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                                        <label className="mb-2 block text-sm font-bold text-foreground">Date</label>
+                                        <input type="date" className="h-11 w-full rounded-lg border border-primary/20 bg-white px-4 text-base font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all" />
                                     </div>
                                     <div>
-                                        <label className="mb-1.5 block text-sm font-medium text-foreground">Time</label>
-                                        <input type="time" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                                        <label className="mb-2 block text-sm font-bold text-foreground">Time</label>
+                                        <input type="time" className="h-11 w-full rounded-lg border border-primary/20 bg-white px-4 text-base font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all" />
                                     </div>
                                 </div>
                             </div>
                         )}
                         {activeAction?.label === 'Generate Report' && (
-                            <div className="space-y-4">
+                            <div className="space-y-5">
                                 <div>
-                                    <label className="mb-1.5 block text-sm font-medium text-foreground">Report Type</label>
-                                    <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30">
+                                    <label className="mb-2 block text-sm font-bold text-foreground">Report Type</label>
+                                    <select className="h-11 w-full rounded-lg border border-primary/20 bg-white px-4 text-base font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all cursor-pointer">
                                         <option>Progress Report</option>
                                         <option>Financial Summary</option>
                                         <option>Team Performance</option>
@@ -120,9 +139,9 @@ export const Overview = ({ project }: OverviewProps) => {
                             </div>
                         )}
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setActiveAction(null)}>Cancel</Button>
-                        <Button onClick={handleActionSubmit}>{activeAction?.label}</Button>
+                    <DialogFooter className="gap-3">
+                        <Button variant="outline" onClick={() => setActiveAction(null)} className="border-border/50 hover:bg-muted/30">Cancel</Button>
+                        <Button onClick={handleActionSubmit} className="bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:scale-105 transition-all">{activeAction?.label}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

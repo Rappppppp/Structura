@@ -4,7 +4,7 @@
  */
 
 import { apiRequest } from '@/lib/api.client';
-import { KanbanTask } from '@/types/task';
+import { KanbanTask, Task, TaskComment } from '@/types/task';
 
 export interface CreateTaskRequest {
   title: string;
@@ -13,7 +13,7 @@ export interface CreateTaskRequest {
   status: 'todo' | 'in-progress' | 'done';
   priority?: 'low' | 'medium' | 'high';
   assigned_to?: string;
-  due_date?: string;
+  due_at?: string;
 }
 
 export interface UpdateTaskRequest {
@@ -22,7 +22,7 @@ export interface UpdateTaskRequest {
   status?: 'todo' | 'in-progress' | 'done';
   priority?: 'low' | 'medium' | 'high';
   assigned_to?: string;
-  due_date?: string;
+  due_at?: string;
 }
 
 export interface TasksListResponse {
@@ -34,11 +34,15 @@ export interface TaskDetailResponse {
 }
 
 const mapTask = (task: any): KanbanTask => ({
-  id: Number(task.id),
+  id: String(task.id),
   title: task.title,
+  description: task.description || '',
   status: task.status,
   priority: task.priority || 'low',
-  assignee: task.assignee?.name || 'A',
+  assignee: task.assignee?.name || 'Unassigned',
+  assigneeId: task.assigned_to || task.assignee?.id,
+  dueAt: task.due_at || undefined,
+  createdAt: task.created_at || undefined,
 });
 
 export const taskService = {
@@ -96,4 +100,22 @@ export const taskService = {
       ...response,
       data: response?.data ? mapTask(response.data) : response?.data,
     })),
+
+  /**
+   * Get all comments for a task
+   */
+  getComments: (taskId: string): Promise<{ data: TaskComment[] }> =>
+    apiRequest.get(`/tasks/${taskId}/comments`),
+
+  /**
+   * Add a comment to a task
+   */
+  addComment: (taskId: string, content: string): Promise<{ data: TaskComment }> =>
+    apiRequest.post(`/tasks/${taskId}/comments`, { content }),
+
+  /**
+   * Delete a comment from a task
+   */
+  deleteComment: (taskId: string, commentId: string): Promise<{ message: string }> =>
+    apiRequest.delete(`/tasks/${taskId}/comments/${commentId}`),
 };

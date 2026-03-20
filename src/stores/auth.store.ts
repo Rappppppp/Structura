@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { User, UserRole } from '@/types';
+import { tokenStorage } from '@/lib/token';
+import type { User } from '@/types';
 
 interface AuthState {
   user: User | null;
@@ -19,7 +20,6 @@ interface AuthActions {
 
 type AuthStore = AuthState & AuthActions;
 
-const JWT_TOKEN_KEY = 'jwt_token';
 const AUTH_USER_KEY = 'auth_user';
 
 /**
@@ -28,7 +28,7 @@ const AUTH_USER_KEY = 'auth_user';
  */
 const getInitialAuthState = () => {
   try {
-    const token = localStorage.getItem(JWT_TOKEN_KEY);
+    const token = tokenStorage.getToken();
     const userJson = localStorage.getItem(AUTH_USER_KEY);
     
     if (token && userJson) {
@@ -84,13 +84,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   logout: () => {
-    // Clear localStorage
-    try {
-      localStorage.removeItem(JWT_TOKEN_KEY);
-      localStorage.removeItem(AUTH_USER_KEY);
-    } catch (error) {
-      console.error('Failed to clear auth data:', error);
-    }
+    tokenStorage.clearAll();
     
     set({
       user: null,

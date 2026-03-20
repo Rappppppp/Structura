@@ -3,6 +3,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TablePagination } from '@/components/TablePagination';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +29,7 @@ const roleColors: Record<UserRole, string> = {
 };
 
 const Users = () => {
+  const ITEMS_PER_PAGE = 15;
   const [search, setSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,15 +49,30 @@ const Users = () => {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: usersData, isLoading, error } = useUsers(currentPage, 15, selectedRole === 'all' ? undefined : selectedRole, search);
+  // Fetch all users (large perPage to get everything)
+  const { data: usersData, isLoading, error } = useUsers(1, 1000);
   const createUser = useCreateUserMutation();
   const updateUser = useUpdateUserMutation();
   const deleteUserMutation = useDeleteUserMutation();
 
   const usersResponse = usersData as any;
   const normalizedUsersData = usersResponse?.data && !Array.isArray(usersResponse?.data) ? usersResponse.data : usersResponse;
-  const users = Array.isArray(normalizedUsersData?.data) ? normalizedUsersData.data : [];
-  const links = Array.isArray(normalizedUsersData?.links) ? normalizedUsersData.links : [];
+  const allUsers = Array.isArray(normalizedUsersData?.data) ? normalizedUsersData.data : [];
+
+  // Apply search and role filtering
+  const filtered = allUsers.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(search.toLowerCase()) ||
+      user.email.toLowerCase().includes(search.toLowerCase());
+    const matchesRole = selectedRole === 'all' || user.role === selectedRole;
+    return matchesSearch && matchesRole;
+  });
+
+  // Calculate pagination on filtered results
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedUsers = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const roleOptions: Array<{ value: UserRole | 'all'; label: string }> = [
     { value: 'all', label: 'All Roles' },
@@ -261,8 +278,8 @@ const Users = () => {
               </tr>
             </thead>
             <tbody>
-              {users.length > 0 ? (
-                users.map(user => (
+              {paginatedUsers.length > 0 ? (
+                paginatedUsers.map(user => (
                   <tr key={user.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
                     <td className="px-4 py-3 text-sm font-medium text-foreground">{user.name}</td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
@@ -296,33 +313,13 @@ const Users = () => {
         </div>
 
         {/* Pagination */}
-        <div className="mt-6 flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {normalizedUsersData?.from || 0} to {normalizedUsersData?.to || 0} of {normalizedUsersData?.total || 0}
-          </div>
-          <div className="flex gap-1">
-            {links.map((link, index) => {
-              // Skip the arrows, they're handled separately
-              if (!link.label || link.label.includes('«') || link.label.includes('»')) {
-                return null;
-              }
-
-              return (
-                <Button
-                  key={index}
-                  variant={link.active ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => {
-                    if (link.page) setCurrentPage(link.page);
-                  }}
-                  disabled={!link.url}
-                >
-                  {link.label}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
+        <TablePagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {/* User Details Dialog */}

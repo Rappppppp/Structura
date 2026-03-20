@@ -1,6 +1,6 @@
 /**
  * Authentication Mutation Hooks
- * Provides React Query hooks for authentication mutations (Sanctum Cookie-Based)
+ * Provides React Query hooks for authentication mutations (JWT-based)
  */
 
 import { useMutation } from '@tanstack/react-query';
@@ -9,8 +9,7 @@ import { queryClient } from '@/lib/queryClient';
 
 /**
  * Hook to login with email and password
- * Sanctum automatically handles httpOnly cookie storage
- * No need to manually store tokens
+ * JWT token handling is managed by AuthContext + token storage utility
  */
 export const useLoginMutation = () => {
   return useMutation({
@@ -19,8 +18,13 @@ export const useLoginMutation = () => {
       // Invalidate auth queries to refetch user data
       queryClient.invalidateQueries({ queryKey: ['auth'] });
     },
-    onError: (error: any) => {
-      console.error('Login failed:', error.response?.data || error.message);
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Unknown authentication error';
+
+      console.error('Login failed:', message);
     },
   });
 };

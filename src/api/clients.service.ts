@@ -5,30 +5,45 @@
 
 import { apiRequest } from '@/lib/api.client';
 import { Client } from '@/types/client';
+import { User } from '@/types/auth';
 
 interface BackendClient {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone?: string;
   industry?: string;
+  contact_person?: string;
   location?: string;
+  active_projects?: number;
+  total_value?: number;
+  status?: string;
+  account_owner?: User;
+  account_owner_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CreateClientRequest {
   name: string;
   email: string;
+  contact_person?: string;
+  industry?: string;
   phone?: string;
-  company?: string;
-  address?: string;
+  location?: string;
+  status?: string;
+  account_owner_id?: string;
 }
 
 export interface UpdateClientRequest {
   name?: string;
   email?: string;
+  contact_person?: string;
+  industry?: string;
   phone?: string;
-  company?: string;
-  address?: string;
+  location?: string;
+  status?: string;
+  account_owner_id?: string;
 }
 
 export interface ClientsListResponse {
@@ -49,8 +64,16 @@ const mapClient = (client: BackendClient): Client => ({
   name: client.name,
   email: client.email,
   phone: client.phone,
-  company: client.industry,
-  address: client.location,
+  industry: client.industry,
+  contact_person: client.contact_person,
+  location: client.location,
+  active_projects: client.active_projects,
+  total_value: client.total_value,
+  status: (client.status as any) || 'active',
+  account_owner: client.account_owner,
+  account_owner_id: client.account_owner_id,
+  created_at: client.created_at,
+  updated_at: client.updated_at,
 });
 
 export const clientService = {
@@ -85,9 +108,11 @@ export const clientService = {
       name: data.name,
       email: data.email,
       phone: data.phone,
-      industry: data.company,
-      location: data.address,
-      contact_person: data.name,
+      industry: data.industry,
+      location: data.location,
+      contact_person: data.contact_person,
+      status: data.status || 'active',
+      account_owner_id: data.account_owner_id,
     }).then((response: any) => ({
       ...response,
       data: response?.data ? mapClient(response.data) : response?.data,
@@ -101,9 +126,11 @@ export const clientService = {
       name: data.name,
       email: data.email,
       phone: data.phone,
-      industry: data.company,
-      location: data.address,
-      contact_person: data.name,
+      industry: data.industry,
+      location: data.location,
+      contact_person: data.contact_person,
+      status: data.status,
+      account_owner_id: data.account_owner_id,
     }).then((response: any) => ({
       ...response,
       data: response?.data ? mapClient(response.data) : response?.data,

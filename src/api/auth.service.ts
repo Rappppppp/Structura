@@ -16,6 +16,16 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+  role?: 'user' | 'admin' | 'project_manager' | 'architect' | 'engineer';
+  company?: string;
+  phone_number?: string;
+}
+
 export interface LoginResponse {
   user: User;
   token: string;
@@ -30,6 +40,12 @@ export interface LogoutResponse {
 }
 
 export const authService = {
+  /**
+   * Register a new user account
+   */
+  register: (payload: RegisterRequest): Promise<ApiResponse<LoginResponse>> =>
+    apiRequest.post<ApiResponse<LoginResponse>>('/auth/register', payload),
+
   /**
    * Login with email and password
    * Returns JWT token that will be stored in localStorage
@@ -48,6 +64,6 @@ export const authService = {
    * Logout and invalidate session
    * Clears JWT token from localStorage on client
    */
-  logout: (): Promise<ApiResponse<{}>> =>
-    apiRequest.post<ApiResponse<{}>>('/auth/logout'),
+  logout: (): Promise<ApiResponse<Record<string, never>>> =>
+    apiRequest.post<ApiResponse<Record<string, never>>>('/auth/logout'),
 };

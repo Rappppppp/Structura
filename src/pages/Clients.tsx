@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TablePagination } from '@/components/TablePagination';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { useToast } from '@/hooks/use-toast';
 import { useClients } from '@/hooks/queries/useClients';
@@ -13,7 +14,9 @@ import type { Client } from '@/types';
 import { Building2, Plus, Search, Mail, Phone, MapPin, DollarSign } from 'lucide-react';
 
 const Clients = () => {
+  const ITEMS_PER_PAGE = 10;
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [addOpen, setAddOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [formData, setFormData] = useState({
@@ -25,21 +28,30 @@ const Clients = () => {
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: clientsData, isLoading, error } = useClients();
+  // Fetch all clients (large perPage to get everything)
+  const { data: clientsData, isLoading, error } = useClients(1, 1000);
   const createClient = useCreateClientMutation();
   
-  // Extract clients array - handle both response structures
-  let clients = [];
+  // Extract clients array
+  let allClients: Client[] = [];
   if (Array.isArray(clientsData)) {
-    clients = clientsData;
+    allClients = clientsData;
   } else if (clientsData?.data && Array.isArray(clientsData.data)) {
-    clients = clientsData.data;
+    allClients = clientsData.data;
   }
 
-  const filtered = Array.isArray(clients) ? clients.filter(c =>
+  // Apply search filter
+  const filtered = allClients.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
-  ) : [];
+  );
+
+  // Calculate pagination on filtered results
+  const filteredPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedClients = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleAddClient = async () => {
     if (!formData.name || !formData.email) {
@@ -102,7 +114,10 @@ const Clients = () => {
                 type="text"
                 placeholder="Search clients..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={e => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
               />
             </div>
@@ -119,7 +134,7 @@ const Clients = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map(client => (
+                {paginatedClients.map(client => (
                   <TableRow key={client.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -145,8 +160,17 @@ const Clients = () => {
             </Table>
           </div>
 
+          {/* Pagination */}
+          <TablePagination 
+            currentPage={currentPage}
+            totalPages={filteredPages}
+            totalItems={filtered.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+          />
+
           <div className="md:hidden space-y-3">
-            {filtered.map(client => (
+            {paginatedClients.map(client => (
               <Card key={client.id} className="animate-fade-in" onClick={() => setSelectedClient(client)}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-3">

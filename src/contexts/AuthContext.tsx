@@ -2,10 +2,34 @@ import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useLoginMutation, useLogoutMutation } from '@/hooks/mutations/useAuthMutations';
 import { useCurrentUser } from '@/hooks/queries/useAuth';
-import { setToken, clearToken } from '@/lib/api.client';
+import { tokenStorage } from '@/lib/token';
 import type { UserRole } from '@/types';
 
 export type { UserRole };
+
+const extractErrorMessage = (error: unknown): string => {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    typeof (error as { response?: unknown }).response === 'object' &&
+    (error as { response?: { data?: unknown } }).response !== null
+  ) {
+    const response = (error as { response?: { data?: unknown } }).response;
+    const data = response?.data;
+
+    if (
+      typeof data === 'object' &&
+      data !== null &&
+      'message' in data &&
+      typeof (data as { message?: unknown }).message === 'string'
+    ) {
+      return (data as { message: string }).message;
+    }
+  }
+
+  return 'Login failed. Please try again.';
+};
 
 interface AuthContextType {
   user: { email: string; name: string; role: UserRole; avatar?: string } | null;
@@ -72,13 +96,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { user, token } = result.data;
       
       // Store JWT token
-      setToken(token);
+      tokenStorage.setToken(token);
       
       // Update auth store
       authStore.setUser(user);
       authStore.setAuthenticated(true);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Login failed. Please try again.';
+    } catch (err: unknown) {
+      const errorMessage = extractErrorMessage(err);
       authStore.setError(errorMessage);
       throw err;
     } finally {
@@ -92,12 +116,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleLogout = async () => {
     try {
       authStore.setLoading(true);
-      clearToken();
       await logoutMutation.mutateAsync();
     } catch (err) {
       // Even if logout mutation fails, clear locally
       console.error('Logout error:', err);
     } finally {
+      tokenStorage.clearAll();
       authStore.logout();
       authStore.setLoading(false);
     }
@@ -124,3 +148,5 @@ export const useAuth = () => {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 };
+
+export { extractErrorMessage };

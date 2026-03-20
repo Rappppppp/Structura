@@ -1,16 +1,20 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Wand2, Send, Loader2, Plus, MessageSquare, Download, Clock } from 'lucide-react';
+import { Wand2, Send, Loader2, Plus, MessageSquare, Download, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { useProjects } from '@/hooks/queries/useProjects';
+import { imageGenerationService } from '@/api/imageGeneration.service';
+import { useGenerateImage } from '@/hooks/mutations/useImageGeneration';
 
 interface Message {
   id: string;
   text: string;
   image?: string;
+  imageId?: string;
   isLoading?: boolean;
   timestamp: Date;
 }
@@ -20,8 +24,13 @@ export default function DesignAssistant() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedProject, setSelectedProject] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { data: projectsData } = useProjects(undefined, 1, 100);
+
+  const projects = projectsData?.data || [];
+  const { mutate: saveImage } = useGenerateImage(selectedProject);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -37,7 +46,15 @@ export default function DesignAssistant() {
   };
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim()) {
+      toast({ title: 'Error', description: 'Please enter a design prompt', variant: 'destructive' });
+      return;
+    }
+
+    if (!selectedProject) {
+      toast({ title: 'Error', description: 'Please select a project first', variant: 'destructive' });
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -46,6 +63,7 @@ export default function DesignAssistant() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const prompt = input;
     setInput('');
     setIsLoading(true);
 
@@ -53,31 +71,40 @@ export default function DesignAssistant() {
     const loadingId = Date.now().toString();
     setMessages(prev => [...prev, {
       id: loadingId,
-      text: 'Generating your design...',
+      text: 'Generating your design with AI...',
       isLoading: true,
       timestamp: new Date()
     }]);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('🎨 Starting design generation with OpenAI DALL-E...');
+      
+      // Generate image using OpenAI API (server-side, handles everything)
+      const savedImage = await imageGenerationService.generateWithOpenAI(selectedProject, prompt);
 
+      console.log('✅ Design generated and saved by backend');
+
+      // Image is already saved by backend, just add to conversation
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: `Generated design for: "${input}"`,
-        image: 'placeholder',
+        text: `Generated design: "${prompt}"`,
+        image: savedImage.url,
+        imageId: savedImage.id,
         timestamp: new Date()
       };
 
       setMessages(prev => prev.filter(m => m.id !== loadingId).concat(aiMessage));
       toast({
-        title: 'Design Generated',
-        description: 'Your AI design has been created successfully.'
+        title: 'Success',
+        description: 'Design generated and saved successfully!'
       });
     } catch (error) {
+      console.error('❌ Design generation error:', error);
+      const message = error instanceof Error ? error.message : 'Failed to generate design. Please try again.';
       toast({
         title: 'Error',
-        description: 'Failed to generate design. Please try again.'
+        description: message,
+        variant: 'destructive'
       });
       setMessages(prev => prev.filter(m => m.id !== loadingId));
     } finally {
@@ -90,6 +117,13 @@ export default function DesignAssistant() {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleDownload = (imageUrl: string) => {
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = `design-${Date.now()}.png`;
+    link.click();
   };
 
   return (
@@ -164,9 +198,26 @@ export default function DesignAssistant() {
                 </div>
                 <div className="min-w-0">
                   <h1 className="font-semibold text-sm sm:text-base text-foreground truncate">AI Design Assistant</h1>
-                  <p className="text-xs text-muted-foreground hidden sm:block">Concept visualization powered by AI</p>
+                  <p className="text-xs text-muted-foreground hidden sm:block">Powered by OpenAI DALL-E</p>
                 </div>
               </div>
+            </div>
+
+            {/* Project Selector */}
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                disabled={isLoading}
+                className="h-9 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 disabled:opacity-50 text-right"
+              >
+                <option value="">Select project...</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -181,9 +232,25 @@ export default function DesignAssistant() {
                 <p className="text-sm sm:text-base text-muted-foreground max-w-md mb-4 sm:mb-6">
                   Describe your architectural design ideas and I'll generate stunning visualizations powered by AI.
                 </p>
+
+                {/* Project Status */}
+                <div className="bg-card border border-border rounded-lg p-3 max-w-md w-full mb-4 sm:mb-6">
+                  {selectedProject ? (
+                    <div className="flex items-center gap-2 text-sm text-success">
+                      <div className="h-2 w-2 rounded-full bg-success" />
+                      Project selected
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-warning">
+                      <AlertCircle className="h-4 w-4" />
+                      Select a project above to save designs
+                    </div>
+                  )}
+                </div>
+
                 <div className="bg-card border border-border rounded-lg p-3 sm:p-4 max-w-md text-left text-pretty">
                   <p className="text-xs sm:text-sm font-semibold text-foreground mb-2">Try asking:</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground">"Generate a 3D concept of a 5-storey commercial building with glass façade and rooftop garden"</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">"Generate a modern 5-story office building with green spaces and glass façade"</p>
                 </div>
               </div>
             ) : (
@@ -201,15 +268,17 @@ export default function DesignAssistant() {
                           <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
                           {msg.image && (
                             <div className="mt-3">
-                              w   <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg flex items-center justify-center border border-primary/20">
-                                <div className="text-center">
-                                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/20 mb-2">
-                                    <Wand2 className="h-6 w-6" />
-                                  </div>
-                                  <p className="text-xs opacity-75">Design Preview</p>
-                                </div>
-                              </div>
-                              <Button size="sm" variant="ghost" className="mt-2 gap-2 text-xs">
+                              <img
+                                src={msg.image}
+                                alt="Generated design"
+                                className="w-full rounded-lg border border-primary/20"
+                              />
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="mt-2 gap-2 text-xs"
+                                onClick={() => handleDownload(msg.image!)}
+                              >
                                 <Download className="h-3 w-3" />
                                 Download
                               </Button>
@@ -234,26 +303,32 @@ export default function DesignAssistant() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  disabled={isLoading}
+                  disabled={isLoading || !selectedProject}
                   rows={3}
                   className="resize-none text-sm"
                 />
               </div>
               <Button
                 onClick={handleSendMessage}
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !input.trim() || !selectedProject}
                 className="gap-2 h-10 sm:h-fit w-full sm:w-auto"
+                title={!selectedProject ? 'Select a project first' : ''}
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="sm:hidden">Generating...</span>
+                  </>
                 ) : (
-                  <Send className="h-4 w-4" />
+                  <>
+                    <Send className="h-4 w-4" />
+                    <span className="sm:hidden">Send</span>
+                  </>
                 )}
-                <span className="sm:hidden">Send</span>
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              AI Design Assistant • Powered by advanced image generation
+              AI Design Assistant • Powered by OpenAI DALL-E
             </p>
           </div>
         </div>

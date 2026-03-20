@@ -5,7 +5,6 @@ import StatusBadge from '@/components/shared/StatusBadge';
 import { useProject } from '@/hooks/queries/useProjects';
 import { ArrowLeft, Users, FolderKanban, FileText, MessageSquare, Cuboid, Pyramid } from 'lucide-react';
 
-import { useQuickActionStore } from '@/stores/project.detailed.quickaction.store';
 import { Overview } from '@/components/projects/Overview';
 import TeamMembers from '@/components/projects/TeamMembers';
 import Tasks from '@/components/projects/Tasks';
@@ -30,14 +29,12 @@ const ProjectDetail = () => {
   const project = projectData?.data;
 
   const TAB_COMPONENTS: Record<string, ReactNode> = {
-    overview: <Overview project={project} />,
-    team: <TeamMembers />,
-    tasks: <Tasks />,
-    files: <Files />,
-    chat: <Chat />,
+    overview: <Overview project={project} projectId={id} />,
+    team: <TeamMembers projectId={id} />,
+    tasks: <Tasks projectId={id} />,
+    files: <Files projectId={id} />,
+    chat: <Chat projectId={id} />,
   };
-
-  const { setActiveAction } = useQuickActionStore();
 
   if (isLoading) return (
     <DashboardLayout>

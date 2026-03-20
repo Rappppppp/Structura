@@ -12,7 +12,7 @@ export interface CreateMessageRequest {
 }
 
 export interface CreateChatRoomRequest {
-  name: string;
+  name?: string;
   project_id: string;
   members?: string[];
 }
@@ -33,12 +33,18 @@ export const communicationService = {
   /**
    * Get all chat rooms
    */
-  getChatRooms: (): Promise<ChatRoomsListResponse> =>
-    apiRequest.get('/communication').then((response: any) => ({
+  getChatRooms: (params?: { project_id?: string; page?: number; perPage?: number }): Promise<ChatRoomsListResponse> =>
+    apiRequest.get('/communication', {
+      params: {
+        project_id: params?.project_id,
+        page: params?.page,
+        per_page: params?.perPage,
+      },
+    }).then((response: any) => ({
       ...response,
       data: Array.isArray(response?.data)
         ? response.data.map((room: any) => ({
-            id: Number(room.id),
+            id: String(room.id),
             name: room.name,
             lastMessage: room.last_message || '',
             time: room.last_message_at ? new Date(room.last_message_at).toLocaleTimeString() : '',
@@ -77,13 +83,13 @@ export const communicationService = {
    * Create new chat room
    */
   createChatRoom: (data: CreateChatRoomRequest): Promise<{ data: ChatRoom }> =>
-    apiRequest.post('/admin/chat-rooms', {
+    apiRequest.post('/communication/rooms', {
       name: data.name,
       project_id: data.project_id,
     }).then((response: any) => ({
       ...response,
       data: {
-        id: Number(response?.data?.id),
+        id: String(response?.data?.id),
         name: response?.data?.name,
         lastMessage: response?.data?.last_message || '',
         time: response?.data?.last_message_at ? new Date(response.data.last_message_at).toLocaleTimeString() : '',

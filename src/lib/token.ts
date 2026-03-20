@@ -3,7 +3,8 @@
  * Handles localStorage operations for authentication tokens
  */
 
-const TOKEN_KEY = 'auth_token';
+const TOKEN_KEY = 'jwt_token';
+const LEGACY_TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 
 export const tokenStorage = {
@@ -12,7 +13,18 @@ export const tokenStorage = {
    */
   getToken: (): string | null => {
     try {
-      return localStorage.getItem(TOKEN_KEY);
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (token) {
+        return token;
+      }
+
+      const legacyToken = localStorage.getItem(LEGACY_TOKEN_KEY);
+      if (legacyToken) {
+        localStorage.setItem(TOKEN_KEY, legacyToken);
+        localStorage.removeItem(LEGACY_TOKEN_KEY);
+      }
+
+      return legacyToken;
     } catch {
       return null;
     }
@@ -24,6 +36,7 @@ export const tokenStorage = {
   setToken: (token: string): void => {
     try {
       localStorage.setItem(TOKEN_KEY, token);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
     } catch (error) {
       console.error('Failed to save token:', error);
     }
@@ -35,6 +48,7 @@ export const tokenStorage = {
   clearToken: (): void => {
     try {
       localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
     } catch (error) {
       console.error('Failed to clear token:', error);
     }

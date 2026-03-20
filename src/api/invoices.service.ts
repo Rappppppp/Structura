@@ -20,6 +20,7 @@ interface BackendInvoice {
   amount: number;
   status: 'paid' | 'pending' | 'overdue';
   due_date?: string;
+  paid_at?: string;
   contract_value?: number;
   created_at?: string;
 }
@@ -27,7 +28,6 @@ interface BackendInvoice {
 export interface CreateInvoiceRequest {
   invoice_id?: string;
   project_id: string;
-  client_id: string;
   amount: number;
   due_date: string;
   items?: Array<{
@@ -40,7 +40,6 @@ export interface CreateInvoiceRequest {
 export interface UpdateInvoiceRequest {
   invoice_id?: string;
   project_id?: string;
-  client_id?: string;
   amount?: number;
   due_date?: string;
   status?: 'pending' | 'paid' | 'overdue';
@@ -68,10 +67,10 @@ export interface RevenueDataResponse {
 const mapInvoice = (invoice: BackendInvoice): Invoice => ({
   id: invoice.invoice_id || invoice.id,
   project: invoice.project?.name || 'N/A',
-  client: invoice.client?.name || 'N/A',
   amount: Number(invoice.amount ?? 0),
   status: invoice.status,
   dueDate: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A',
+  paidAt: invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString() : undefined,
   contractValue: invoice.contract_value ? Number(invoice.contract_value) : undefined,
 });
 

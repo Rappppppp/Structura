@@ -9,10 +9,10 @@ import { communicationService } from '@/api/communication.service';
 /**
  * Hook to fetch all chat rooms
  */
-export const useChatRooms = () => {
+export const useChatRooms = (projectId?: string) => {
   return useQuery({
-    queryKey: ['chatRooms'],
-    queryFn: () => communicationService.getChatRooms(),
+    queryKey: ['chatRooms', { projectId }],
+    queryFn: () => communicationService.getChatRooms({ project_id: projectId }),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

@@ -41,7 +41,7 @@ export const useUpdateTaskMutation = () => {
  */
 export const useUpdateTaskStatusMutation = () => {
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
+    mutationFn: ({ id, status }: { id: string; status: 'todo' | 'in-progress' | 'done' }) =>
       taskService.updateStatus(id, status),
     onSuccess: () => {
       // Invalidate all tasks
@@ -59,6 +59,34 @@ export const useDeleteTaskMutation = () => {
     onSuccess: () => {
       // Invalidate tasks list
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+};
+
+/**
+ * Hook to add a comment to a task
+ */
+export const useAddTaskCommentMutation = () => {
+  return useMutation({
+    mutationFn: ({ taskId, content }: { taskId: string; content: string }) =>
+      taskService.addComment(taskId, content),
+    onSuccess: (_, variables) => {
+      // Invalidate task comments
+      queryClient.invalidateQueries({ queryKey: ['tasks', variables.taskId, 'comments'] });
+    },
+  });
+};
+
+/**
+ * Hook to delete a task comment
+ */
+export const useDeleteTaskCommentMutation = () => {
+  return useMutation({
+    mutationFn: ({ taskId, commentId }: { taskId: string; commentId: string }) =>
+      taskService.deleteComment(taskId, commentId),
+    onSuccess: (_, variables) => {
+      // Invalidate task comments
+      queryClient.invalidateQueries({ queryKey: ['tasks', variables.taskId, 'comments'] });
     },
   });
 };
