@@ -29,17 +29,19 @@ const StatCard = ({ title, value, change, changeType = 'neutral', icon: Icon }: 
   };
 
   return (
-    <div className="rounded-xl border border-border/50 bg-gradient-to-br from-card to-card/80 p-6 shadow-md hover:shadow-lg hover:border-border transition-all duration-300 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-card-foreground">{value}</p>
+    <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-card to-card/80 p-6 shadow-md hover:shadow-xl hover:border-primary/30 transition-all duration-300 animate-fade-in">
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      
+      <div className="relative z-10 flex items-center justify-between">
+        <div className="flex-1">
+          <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">{title}</p>
+          <p className="mt-2 text-4xl font-bold text-card-foreground group-hover:text-primary transition-colors">{value}</p>
           {change && (
-            <p className={`mt-2 text-sm font-semibold ${changeColor}`}>{change}</p>
+            <p className={`mt-3 text-sm font-semibold ${changeColor}`}>{change}</p>
           )}
         </div>
-        <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${bgColors[changeType]} border border-${iconColors[changeType]}/20`}>
-          <Icon className={`h-7 w-7 ${iconColors[changeType]}`} />
+        <div className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${bgColors[changeType]} border border-${iconColors[changeType]}/20 group-hover:scale-110 transition-transform duration-300`}>
+          <Icon className={`h-8 w-8 ${iconColors[changeType]}`} />
         </div>
       </div>
     </div>

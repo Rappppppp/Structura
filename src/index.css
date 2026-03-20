@@ -149,7 +149,77 @@
   .structura-gradient {
     background: linear-gradient(135deg, hsl(222 47% 11%), hsl(217 91% 30%));
   }
+  
   .structura-glass {
     @apply bg-card/80 backdrop-blur-sm border border-border/50;
+  }
+
+  /* Dashboard cards */
+  .dashboard-card {
+    @apply rounded-2xl border border-border/50 bg-card shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30;
+  }
+
+  .dashboard-card-hover {
+    @apply group hover:scale-105 cursor-pointer;
+  }
+
+  /* Modern gradient text */
+  .gradient-heading {
+    @apply bg-gradient-to-r from-foreground via-primary to-foreground/80 bg-clip-text text-transparent;
+  }
+
+  /* Smooth transitions */
+  .smooth-transition {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-white/30 dark:bg-black/20 backdrop-blur-md border border-white/20 dark:border-white/10;
+  }
+
+  /* Shadow effects */
+  .shadow-soft {
+    @apply shadow-sm;
+  }
+
+  .shadow-elevated {
+    @apply shadow-lg shadow-primary/10 dark:shadow-primary/20;
+  }
+
+  /* Badge effects */
+  .badge-gradient {
+    @apply bg-gradient-to-r from-primary/20 to-primary/10 text-primary dark:text-primary-foreground border border-primary/30;
+  }
+
+  /* Icon styling */
+  .icon-primary {
+    @apply text-primary transition-all duration-300 group-hover:scale-110;
+  }
+
+  /* Status indicators */
+  .status-dot {
+    @apply h-2 w-2 rounded-full;
+  }
+
+  .status-dot-active {
+    @apply status-dot bg-green-500 animate-pulse;
+  }
+
+  .status-dot-away {
+    @apply status-dot bg-yellow-500;
+  }
+
+  .status-dot-offline {
+    @apply status-dot bg-gray-400;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    @apply h-2 rounded-full bg-muted overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500;
   }
 }

@@ -16,7 +16,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   admin: [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Projects', path: '/projects', icon: FolderKanban },
-    { label: 'Teams', path: '/teams', icon: Users },
+    // { label: 'Teams', path: '/teams', icon: Users },
     { label: 'Clients', path: '/clients', icon: Building2 },
     { label: 'Users', path: '/users', icon: Grid3X3 },
     { label: 'Attendance', path: '/admin/attendance', icon: ClipboardList },
@@ -25,7 +25,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'AI Design Assistant', path: '/ai-design-assistant', icon: PencilRuler },
     // { label: 'AI Insights', path: '/ai-insights', icon: Brain },
     { label: 'Reports', path: '/reports', icon: BarChart3 },
-    { label: 'Settings', path: '/settings', icon: Settings },
+    // { label: 'Settings', path: '/settings', icon: Settings },
   ],
   architect: [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },

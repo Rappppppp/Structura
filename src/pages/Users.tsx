@@ -19,6 +19,7 @@ import { useCreateUserMutation, useUpdateUserMutation, useDeleteUserMutation } f
 import { useQueryClient } from '@tanstack/react-query';
 import type { User, UserRole } from '@/types';
 import { Plus, Search, Mail, Phone, Building2, Shield, Edit2, Trash2 } from 'lucide-react';
+import { capitalizeFirstLetter } from '@/lib/helper';
 
 const roleColors: Record<UserRole, string> = {
   admin: 'bg-red-100 text-red-800',
@@ -286,7 +287,7 @@ const Users = () => {
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${roleColors[user.role]}`}>
                         <Shield className="h-3 w-3" />
-                        {user.role.replace('_', ' ')}
+                        {capitalizeFirstLetter(user.role.replace('_', ' '))}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{user.company}</td>
