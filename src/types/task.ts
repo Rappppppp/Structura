@@ -1,5 +1,9 @@
+
 export type TaskStatus = 'todo' | 'in-progress' | 'done';
 export type TaskPriority = 'high' | 'medium' | 'low';
+export type TaskCategory = 'structural' | 'architectural';
+export type TaskSubCategory = 'masonry' | 'plumbing' | 'electrical' | 'finishing' | '';
+export type TaskFinishingType = 'ceiling' | 'painting' | 'tiles' | 'fixtures' | 'facade' | 'roofing' | '';
 
 export interface TaskAssignee {
   id: string;
@@ -24,6 +28,9 @@ export interface Task {
   due_at?: string;
   created_at?: string;
   updated_at?: string;
+  category?: TaskCategory;
+  subCategory?: TaskSubCategory;
+  finishingType?: TaskFinishingType;
 }
 
 export interface TaskComment {
@@ -50,4 +57,7 @@ export interface KanbanTask {
   workPercentage?: number;
   dueAt?: string;
   createdAt?: string;
+  category?: TaskCategory;
+  subCategory?: TaskSubCategory;
+  finishingType?: TaskFinishingType;
 }

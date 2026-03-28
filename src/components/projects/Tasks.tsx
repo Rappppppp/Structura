@@ -2,7 +2,7 @@ import { useTasks } from '@/hooks/queries/useTasks';
 import { useState } from 'react';
 import { useUpdateTaskStatusMutation, useCreateTaskMutation, useUpdateTaskMutation, useDeleteTaskMutation } from '@/hooks/mutations/useTaskMutations';
 import { useToast } from '@/hooks/use-toast';
-import { useUsersDropdown } from '@/hooks/queries/useProjectTeam';
+import { useProjectTeam } from '@/hooks/queries/useProjectTeam';
 import { KanbanTask, TaskStatus, TaskPriority } from '@/types/task';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -33,6 +33,9 @@ const emptyForm = {
     due_at: '',
     status: 'todo' as TaskStatus,
     work_percentage: 0,
+    category: 'structural' as const,
+    subCategory: '' as const,
+    finishingType: '' as const,
 };
 
 function initials(name: string): string {
@@ -53,8 +56,12 @@ function formatDue(dueAt?: string): { text: string; overdue: boolean } | null {
 const Tasks = ({ projectId }: TasksProps) => {
     const { data: tasksData } = useTasks(projectId);
     const tasks = tasksData?.data || [];
-    const { data: usersData } = useUsersDropdown();
-    const users = usersData?.data || [];
+    const { data: teamData } = useProjectTeam(projectId);
+    const users = (teamData?.data || []).map(member => ({
+        id: member.user.id,
+        name: member.user.name,
+        email: member.user.email,
+    }));
 
     const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
     const [dragOverCol, setDragOverCol] = useState<TaskStatus | null>(null);
@@ -114,6 +121,10 @@ const Tasks = ({ projectId }: TasksProps) => {
     const handleCreate = async () => {
         if (!createForm.title.trim()) { toast({ title: 'Title is required', variant: 'destructive' }); return; }
         if (!projectId) return;
+        // Classification validation
+        if (!createForm.category) { toast({ title: 'Category is required', variant: 'destructive' }); return; }
+        if (createForm.category === 'architectural' && !createForm.subCategory) { toast({ title: 'Sub-Category is required', variant: 'destructive' }); return; }
+        if (createForm.category === 'architectural' && createForm.subCategory === 'finishing' && !createForm.finishingType) { toast({ title: 'Finishing Type is required', variant: 'destructive' }); return; }
         try {
             await createTask.mutateAsync({
                 title: createForm.title,
@@ -123,6 +134,9 @@ const Tasks = ({ projectId }: TasksProps) => {
                 priority: createForm.priority,
                 assigned_to: createForm.assigned_to || undefined,
                 due_at: createForm.due_at || undefined,
+                category: createForm.category,
+                subCategory: createForm.category === 'architectural' ? createForm.subCategory : undefined,
+                finishingType: createForm.category === 'architectural' && createForm.subCategory === 'finishing' ? createForm.finishingType : undefined,
             });
             setCreateOpen(false);
             setCreateForm({ ...emptyForm });
@@ -142,16 +156,22 @@ const Tasks = ({ projectId }: TasksProps) => {
             due_at: task.dueAt ? task.dueAt.substring(0, 10) : '',
             status: task.status,
             work_percentage: task.workPercentage || 0,
+            category: task.category || 'structural',
+            subCategory: task.subCategory || '',
+            finishingType: task.finishingType || '',
         });
         setEditOpen(true);
     };
 
     const handleEdit = async () => {
         if (!editingTask || !editForm.title.trim()) { toast({ title: 'Title is required', variant: 'destructive' }); return; }
+        // Classification validation
+        if (!editForm.category) { toast({ title: 'Category is required', variant: 'destructive' }); return; }
+        if (editForm.category === 'architectural' && !editForm.subCategory) { toast({ title: 'Sub-Category is required', variant: 'destructive' }); return; }
+        if (editForm.category === 'architectural' && editForm.subCategory === 'finishing' && !editForm.finishingType) { toast({ title: 'Finishing Type is required', variant: 'destructive' }); return; }
         try {
             // Auto-set status to 'done' if work_percentage reaches 100%
             const finalStatus = editForm.work_percentage >= 100 ? 'done' : editForm.status;
-            
             await updateTask.mutateAsync({
                 id: String(editingTask.id),
                 data: {
@@ -162,6 +182,9 @@ const Tasks = ({ projectId }: TasksProps) => {
                     assigned_to: editForm.assigned_to || undefined,
                     due_at: editForm.due_at || undefined,
                     work_percentage: editForm.work_percentage,
+                    category: editForm.category,
+                    subCategory: editForm.category === 'architectural' ? editForm.subCategory : undefined,
+                    finishingType: editForm.category === 'architectural' && editForm.subCategory === 'finishing' ? editForm.finishingType : undefined,
                 },
             });
             setEditOpen(false);
@@ -276,6 +299,8 @@ const Tasks = ({ projectId }: TasksProps) => {
                                     const due = formatDue(task.dueAt);
                                     const assigneeName = task.assignee || '';
                                     const pConf = PRIORITY_CONFIG[task.priority];
+                                    const categoryLabel = task.category === 'architectural' ? 'Architectural' : (task.category === 'structural' ? 'Structural' : '');
+                                    const categoryColor = task.category === 'architectural' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
                                     return (
                                         <div
                                             key={task.id}
@@ -306,6 +331,13 @@ const Tasks = ({ projectId }: TasksProps) => {
                                                     </button>
                                                 </div>
                                             </div>
+
+                                            {/* Category badge */}
+                                            {categoryLabel && (
+                                                <span className={`inline-block mb-1 rounded-full px-2 py-0.5 text-[10px] font-bold mr-2 ${categoryColor}`}>
+                                                    {categoryLabel}
+                                                </span>
+                                            )}
 
                                             {/* Title */}
                                             <p
@@ -399,6 +431,7 @@ const Tasks = ({ projectId }: TasksProps) => {
                         setForm={setCreateForm}
                         users={users}
                         showStatusField={false}
+                        showClassificationFields={true}
                     />
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
@@ -421,6 +454,7 @@ const Tasks = ({ projectId }: TasksProps) => {
                         setForm={setEditForm}
                         users={users}
                         showStatusField={true}
+                        showClassificationFields={true}
                     />
                     <DialogFooter className="gap-2">
                         <Button
@@ -467,19 +501,70 @@ const Tasks = ({ projectId }: TasksProps) => {
 };
 
 // Reusable form component
+import { TaskCategory, TaskSubCategory, TaskFinishingType } from '@/types/task';
 interface TaskFormProps {
     form: typeof emptyForm;
     setForm: (f: typeof emptyForm) => void;
     users: { id: string; name: string; email: string }[];
     showStatusField: boolean;
+    showClassificationFields?: boolean;
 }
 
-const TaskForm = ({ form, setForm, users, showStatusField }: TaskFormProps) => {
+const TaskForm = ({ form, setForm, users, showStatusField, showClassificationFields }: TaskFormProps) => {
     const inputClass = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30';
     const labelClass = 'mb-1.5 block text-sm font-medium text-foreground';
 
     return (
         <div className="space-y-3 py-2">
+            {showClassificationFields && (
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <label className={labelClass}>Category *</label>
+                        <select
+                            className={inputClass}
+                            value={form.category}
+                            onChange={e => setForm({ ...form, category: e.target.value as TaskCategory, subCategory: '', finishingType: '' })}
+                        >
+                            <option value="structural">Structural</option>
+                            <option value="architectural">Architectural</option>
+                        </select>
+                    </div>
+                    {form.category === 'architectural' && (
+                        <div>
+                            <label className={labelClass}>Sub-Category *</label>
+                            <select
+                                className={inputClass}
+                                value={form.subCategory}
+                                onChange={e => setForm({ ...form, subCategory: e.target.value as TaskSubCategory, finishingType: '' })}
+                            >
+                                <option value="">Select...</option>
+                                <option value="masonry">Masonry</option>
+                                <option value="plumbing">Plumbing</option>
+                                <option value="electrical">Electrical</option>
+                                <option value="finishing">Finishing</option>
+                            </select>
+                        </div>
+                    )}
+                    {form.category === 'architectural' && form.subCategory === 'finishing' && (
+                        <div>
+                            <label className={labelClass}>Finishing Type *</label>
+                            <select
+                                className={inputClass}
+                                value={form.finishingType}
+                                onChange={e => setForm({ ...form, finishingType: e.target.value as TaskFinishingType })}
+                            >
+                                <option value="">Select...</option>
+                                <option value="ceiling">Ceiling</option>
+                                <option value="painting">Painting</option>
+                                <option value="tiles">Tiles</option>
+                                <option value="fixtures">Fixtures</option>
+                                <option value="facade">Facade</option>
+                                <option value="roofing">Roofing</option>
+                            </select>
+                        </div>
+                    )}
+                </div>
+            )}
             <div>
                 <label className={labelClass}>Title *</label>
                 <input

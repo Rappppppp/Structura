@@ -72,11 +72,43 @@ export const Overview = ({ project, projectId }: OverviewProps) => {
 
     return (
         <>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                {/* Confetti on completion */}
-                {showConfetti && <Confetti />}
-                {/* Progress & Stats */}
-                <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6 lg:col-span-2 shadow-sm animate-fade-in-up">
+            {showConfetti && <Confetti />}
+            {/* Modern Project Header Card */}
+            {/* <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 to-white/80 to-90% p-8 mb-8 shadow-lg flex flex-col md:flex-row md:items-center md:justify-between gap-6 animate-fade-in-up">
+                <div className="flex-1 min-w-0">
+                    <h1 className="text-3xl md:text-4xl font-extrabold text-primary mb-2 truncate">{project.name}</h1>
+                    <p className="text-base md:text-lg text-muted-foreground mb-2 max-w-2xl truncate">{project.description || 'No description provided.'}</p>
+                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                            <Clock className="h-4 w-4" /> Deadline: {project.deadline ? new Date(project.deadline).toLocaleDateString() : 'N/A'}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-success/10 text-success text-xs font-semibold">
+                            <CheckCircle className="h-4 w-4" /> Status: <span className="ml-1 capitalize">{project.status}</span>
+                        </span>
+                        {project.clients && project.clients.length > 0 && (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted/60 text-foreground text-xs font-semibold">
+                                <Info className="h-4 w-4" />
+                                {project.clients.map(c => c.name).join(', ')}
+                            </span>
+                        )}
+                    </div>
+                </div>
+                <div className="flex flex-col gap-3 min-w-[220px]">
+                    <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-4 flex flex-col items-center">
+                        <span className="text-xs font-bold text-primary uppercase mb-1 tracking-wider">Budget</span>
+                        <span className="text-2xl font-extrabold text-primary">₱{Number(project.budget || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="rounded-xl bg-gradient-to-br from-success/10 to-success/5 border border-success/20 p-4 flex flex-col items-center">
+                        <span className="text-xs font-bold text-success uppercase mb-1 tracking-wider">Team Size</span>
+                        <span className="text-2xl font-extrabold text-success">{teamCount} {teamCount === 1 ? 'Member' : 'Members'}</span>
+                    </div>
+                </div>
+            </div> */}
+
+            {/* Progress, Timeline, and Quick Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Progress & Timeline */}
+                <div className="md:col-span-2 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6 shadow-sm animate-fade-in-up">
                     <div className="flex items-center gap-2 mb-6">
                         <div className="h-1 w-8 rounded-full bg-primary"></div>
                         <h3 className="text-lg font-bold text-primary">Project Progress</h3>
@@ -100,32 +132,6 @@ export const Overview = ({ project, projectId }: OverviewProps) => {
                                 <p className="text-sm font-semibold text-success">✓ Project Completed</p>
                             </div>
                         )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 mt-8">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="rounded-lg border border-primary/20 bg-white p-4 flex items-center gap-2 group hover:shadow-lg transition-all cursor-pointer animate-fade-in-up">
-                                <Info className="h-4 w-4 text-primary/60 opacity-0 group-hover:opacity-100 transition" />
-                                <div>
-                                    <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2">Budget</p>
-                                    <p className="text-2xl font-bold text-primary">₱{Number(project.budget || 0).toLocaleString()}</p>
-                                </div>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">Total project budget</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="rounded-lg border border-success/20 bg-white p-4 flex items-center gap-2 group hover:shadow-lg transition-all cursor-pointer animate-fade-in-up">
-                                <Info className="h-4 w-4 text-success/60 opacity-0 group-hover:opacity-100 transition" />
-                                <div>
-                                    <p className="text-xs font-bold text-success uppercase tracking-wider mb-2">Team Size</p>
-                                    <p className="text-2xl font-bold text-success">{teamCount} {teamCount === 1 ? 'Member' : 'Members'}</p>
-                                </div>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">Number of team members</TooltipContent>
-                        </Tooltip>
                     </div>
                     {/* Timeline section */}
                     <div className="mt-8">
@@ -167,14 +173,14 @@ export const Overview = ({ project, projectId }: OverviewProps) => {
                                         </div>
                                         <span>{action.label}</span>
                                     </button>
-                                                                        <Tooltip>
-                                                                            <TooltipTrigger asChild>
-                                                                                <Button size="icon" variant="ghost" className="hover:bg-muted/50">
-                                                                                        <Info className="h-4 w-4 text-muted-foreground" />
-                                                                                </Button>
-                                                                            </TooltipTrigger>
-                                                                            <TooltipContent side="left">View details for {action.label}</TooltipContent>
-                                                                        </Tooltip>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button size="icon" variant="ghost" className="hover:bg-muted/50">
+                                                <Info className="h-4 w-4 text-muted-foreground" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="left">View details for {action.label}</TooltipContent>
+                                    </Tooltip>
                                 </div>
                             );
                         })}
@@ -182,6 +188,7 @@ export const Overview = ({ project, projectId }: OverviewProps) => {
                 </div>
             </div>
 
+            {/* Dialog for Quick Actions */}
             <Dialog open={!!activeAction} onOpenChange={(open) => !open && setActiveAction(null)}>
                 <DialogContent className="border-primary/20">
                     <DialogHeader>

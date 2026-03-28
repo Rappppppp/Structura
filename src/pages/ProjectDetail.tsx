@@ -5,7 +5,7 @@ import StatusBadge from '@/components/shared/StatusBadge';
 import { useProject } from '@/hooks/queries/useProjects';
 import { useUpdateProjectMutation } from '@/hooks/mutations/useProjectMutations';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Users, FolderKanban, FileText, MessageSquare, Cuboid, Pyramid, Check, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Users, FolderKanban, FileText, MessageSquare, Cuboid, Pyramid, Check, XCircle, Clock, AlertCircle, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ProjectStatus } from '@/types';
@@ -175,77 +175,79 @@ const ProjectDetail = () => {
     files: <Files projectId={id} />,
     chat: <Chat projectId={id} />,
     design: (
-      <div className="flex flex-col h-[60vh]">
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center px-4">
-              <div className="rounded-full bg-primary/10 p-3 sm:p-4 mb-3 sm:mb-4">
-                <Wand2 className="h-8 sm:h-12 w-8 sm:w-12 text-primary" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">Design Assistant</h2>
-              <p className="text-sm sm:text-base text-muted-foreground max-w-md mb-4 sm:mb-6">
-                Describe your architectural design ideas and I'll generate stunning visualizations powered by AI.
-              </p>
-              <div className="bg-card border border-border rounded-lg p-3 max-w-md w-full mb-4 sm:mb-6">
-                {id ? (
-                  <div className="flex items-center gap-2 text-sm text-success">
-                    <div className="h-2 w-2 rounded-full bg-success" />
-                    Project selected
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-sm text-warning">
-                    <AlertCircle className="h-4 w-4" />
-                    Project not loaded
-                  </div>
-                )}
-              </div>
-              <div className="bg-card border border-border rounded-lg p-3 sm:p-4 max-w-md text-left text-pretty">
-                <p className="text-xs sm:text-sm font-semibold text-foreground mb-2">Try asking:</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">"Generate a modern 5-story office building with green spaces and glass façade"</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              {messages.map(msg => (
-                <div key={msg.id} className={`flex ${msg.image ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`w-full sm:max-w-2xl ${msg.image ? 'bg-primary/90 text-primary-foreground' : 'bg-card border border-border'} rounded-lg p-3 sm:p-4 break-words`}>
-                    {msg.isLoading ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="text-sm">{msg.text}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
-                        {msg.image && (
-                          <div className="mt-3">
-                            <img
-                              src={`${import.meta.env.VITE_APP_BASE_URL}${msg.image}`}
-                              alt="Generated design"
-                              className="w-full rounded-lg border border-primary/20"
-                            />
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="mt-2 gap-2 text-xs"
-                              onClick={() => handleDownload(`${import.meta.env.VITE_APP_BASE_URL}${msg.image}`)}
-                            >
-                              <Download className="h-3 w-3" />
-                              Download
-                            </Button>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
+      <div className="flex flex-col h-[65vh]">
+        <div className="flex-1 overflow-y-auto p-0 sm:p-0">
+          <div className="max-w-2xl mx-auto w-full h-full flex flex-col justify-center">
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
+                <div className="rounded-full bg-primary/10 p-4 mb-4">
+                  <Wand2 className="h-10 w-10 sm:h-14 sm:w-14 text-primary" />
                 </div>
-              ))}
-            </>
-          )}
-          <div ref={messagesEndRef} />
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-primary mb-2">AI Design Assistant</h2>
+                <p className="text-base sm:text-lg text-muted-foreground max-w-lg mb-6">
+                  Describe your architectural design ideas and AI will generate stunning visualizations.
+                </p>
+                <div className="bg-card border border-border rounded-xl p-4 max-w-lg w-full mb-6">
+                  {id ? (
+                    <div className="flex items-center gap-2 text-base text-success font-semibold">
+                      <div className="h-2 w-2 rounded-full bg-success" />
+                      Project selected
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-base text-warning font-semibold">
+                      <AlertCircle className="h-5 w-5" />
+                      Project not loaded
+                    </div>
+                  )}
+                </div>
+                <div className="bg-muted/40 border border-border rounded-xl p-4 max-w-lg text-left">
+                  <p className="text-sm font-semibold text-foreground mb-2">Try asking:</p>
+                  <p className="text-sm text-muted-foreground">"Generate a modern 5-story office building with green spaces and glass façade"</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4 py-4">
+                {messages.map(msg => (
+                  <div key={msg.id} className={`flex ${msg.image ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`w-full sm:max-w-2xl ${msg.image ? 'bg-primary/90 text-primary-foreground' : 'bg-card border border-border'} rounded-xl p-4 break-words shadow-sm`}>
+                      {msg.isLoading ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-base">{msg.text}</span>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-base whitespace-pre-wrap font-medium">{msg.text}</p>
+                          {msg.image && (
+                            <div className="mt-4 flex flex-col items-end">
+                              <img
+                                src={`${import.meta.env.VITE_APP_BASE_URL}${msg.image}`}
+                                alt="Generated design"
+                                className="w-full rounded-lg border border-primary/20 shadow-md"
+                              />
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="mt-2 gap-2 text-xs"
+                                onClick={() => handleDownload(`${import.meta.env.VITE_APP_BASE_URL}${msg.image}`)}
+                              >
+                                <Download className="h-3 w-3" />
+                                Download
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
-        <div className="p-3 sm:p-6 border-t border-border bg-background">
-          <div className="flex gap-2 sm:gap-3 flex-col sm:flex-row">
+        <div className="p-4 sm:p-6 border-t border-border bg-background">
+          <div className="flex gap-2 sm:gap-3 flex-col sm:flex-row max-w-2xl mx-auto">
             <div className="flex-1">
               <Textarea
                 placeholder="Describe your design idea... (Shift+Enter for new line)"
@@ -254,53 +256,55 @@ const ProjectDetail = () => {
                 onKeyDown={handleKeyDown}
                 disabled={designIsLoading || !id}
                 rows={3}
-                className="resize-none text-sm"
+                className="resize-none text-base"
               />
             </div>
             <Button
               onClick={handleSendMessage}
               disabled={designIsLoading || !input.trim() || !id}
-              className="gap-2 h-10 sm:h-fit w-full sm:w-auto"
+              className="gap-2 h-12 sm:h-fit w-full sm:w-auto text-base font-semibold"
               title={!id ? 'Project not loaded' : ''}
             >
               {designIsLoading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="sm:hidden">Generating...</span>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Generating...</span>
                 </>
               ) : (
                 <>
-                  <Send className="h-4 w-4" />
-                  <span className="sm:hidden">Send</span>
+                  <Send className="h-5 w-5" />
+                  <span>Send</span>
                 </>
               )}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-muted-foreground mt-2 text-center">
             AI Design Assistant • Powered by OpenAI DALL-E
           </p>
         </div>
       </div>
     ),
     images: (
-      <div className="p-3 sm:p-6">
-        <h2 className="text-lg font-semibold mb-4">Image Generations</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {images.length === 0 && (
-            <div className="col-span-full text-center text-muted-foreground">No images found for this project.</div>
-          )}
-          {images.map((img) => (
-            <div key={img.id} className="bg-card border border-border rounded-lg p-3 flex flex-col items-center">
-              <img src={`${import.meta.env.VITE_APP_BASE_URL}${img.url}`} alt={img.prompt} className="w-full rounded mb-2 border" />
-              <div className="text-xs text-muted-foreground mb-1 truncate w-full">{img.prompt}</div>
-              <Button size="sm" variant="ghost" onClick={() => {
-                const link = document.createElement('a');
-                link.href = `${import.meta.env.VITE_APP_BASE_URL}${img.url}`;
-                link.download = `design-${img.id}.png`;
-                link.click();
-              }}>Download</Button>
-            </div>
-          ))}
+      <div className="p-0 sm:p-0">
+        <div className="max-w-5xl mx-auto w-full">
+          <h2 className="text-2xl font-extrabold text-primary mb-6 mt-2 text-center">Image Generations</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+            {images.length === 0 && (
+              <div className="col-span-full text-center text-muted-foreground py-12 text-lg font-medium">No images found for this project.</div>
+            )}
+            {images.map((img) => (
+              <div key={img.id} className="bg-card border border-border rounded-2xl p-4 flex flex-col items-center shadow-md hover:shadow-lg transition-all">
+                <img src={`${import.meta.env.VITE_APP_BASE_URL}${img.url}`} alt={img.prompt} className="w-full rounded-xl mb-3 border shadow-sm" />
+                <div className="text-sm text-muted-foreground mb-2 truncate w-full text-center font-medium">{img.prompt}</div>
+                <Button size="sm" variant="outline" className="w-full" onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = `${import.meta.env.VITE_APP_BASE_URL}${img.url}`;
+                  link.download = `design-${img.id}.png`;
+                  link.click();
+                }}>Download</Button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     ),
@@ -322,18 +326,34 @@ const ProjectDetail = () => {
     </DashboardLayout>
   );
 
+
   return (
     <DashboardLayout>
-      <div className="mb-6">
-        <button onClick={() => navigate('/projects')} className="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="h-4 w-4" /> Back to Projects
-        </button>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">{project.name}</h1>
-            <p className="text-sm text-muted-foreground">{project.clients && project.clients.length > 0 ? project.clients.map(c => c.name).join(', ') : 'No client'} · Deadline: {formatDate(project.deadline)}</p>
+      {/* Modern Project Header Card */}
+      <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 to-white/80 to-90% p-8 mb-8 shadow-lg flex flex-col md:flex-row md:items-center md:justify-between gap-6 animate-fade-in-up">
+        <div className="flex-1 min-w-0">
+          <button onClick={() => navigate('/projects')} className="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-4 w-4" /> Back to Projects
+          </button>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-primary mb-2 truncate">{project.name}</h1>
+          <p className="text-base md:text-lg text-muted-foreground mb-2 max-w-2xl truncate">{project.description || 'No description provided.'}</p>
+          <div className="flex flex-wrap items-center gap-3 mb-2">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+              <Clock className="h-4 w-4" /> Deadline: {project.deadline ? formatDate(project.deadline) : 'N/A'}
+            </span>
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-success/10 text-success text-xs font-semibold">
+              <Check className="h-4 w-4" /> Status: <span className="ml-1 capitalize">{project.status}</span>
+            </span>
+            {project.clients && project.clients.length > 0 && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted/60 text-foreground text-xs font-semibold">
+                <Info className="h-4 w-4" />
+                {project.clients.map(c => c.name).join(', ')}
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-3">
+        </div>
+        <div className="flex flex-col gap-3 min-w-[220px] items-end">
+          <div className="flex items-center gap-3 mb-2">
             <StatusBadge status={project.status} />
             <Button
               onClick={() => setStatusDialogOpen(true)}
@@ -352,6 +372,10 @@ const ProjectDetail = () => {
                 Complete Project
               </Button>
             )}
+          </div>
+          <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-4 flex flex-col items-center w-full">
+            <span className="text-xs font-bold text-primary uppercase mb-1 tracking-wider">Budget</span>
+            <span className="text-2xl font-extrabold text-primary">₱{Number(project.budget || 0).toLocaleString()}</span>
           </div>
         </div>
       </div>
@@ -395,9 +419,9 @@ const ProjectDetail = () => {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.key
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors ${activeTab === tab.key
               ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
+              : 'border-transparent text-black hover:text-foreground'
               }`}
           >
             <tab.icon className="h-4 w-4" /> {tab.label}

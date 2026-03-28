@@ -6,6 +6,8 @@
 import { apiRequest } from '@/lib/api.client';
 import { KanbanTask, Task, TaskComment } from '@/types/task';
 
+import { TaskCategory, TaskSubCategory, TaskFinishingType } from '@/types/task';
+
 export interface CreateTaskRequest {
   title: string;
   description?: string;
@@ -15,6 +17,9 @@ export interface CreateTaskRequest {
   assigned_to?: string;
   due_at?: string;
   work_percentage?: number;
+  category?: TaskCategory;
+  subCategory?: TaskSubCategory;
+  finishingType?: TaskFinishingType;
 }
 
 export interface UpdateTaskRequest {
@@ -25,6 +30,9 @@ export interface UpdateTaskRequest {
   assigned_to?: string;
   due_at?: string;
   work_percentage?: number;
+  category?: TaskCategory;
+  subCategory?: TaskSubCategory;
+  finishingType?: TaskFinishingType;
 }
 
 export interface TasksListResponse {
@@ -46,6 +54,9 @@ const mapTask = (task: any): KanbanTask => ({
   workPercentage: task.work_percentage || 0,
   dueAt: task.due_at || undefined,
   createdAt: task.created_at || undefined,
+  category: task.category || undefined,
+  subCategory: task.subCategory || undefined,
+  finishingType: task.finishingType || undefined,
 });
 
 export const taskService = {
