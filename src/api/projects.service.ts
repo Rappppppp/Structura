@@ -6,6 +6,7 @@
 import { apiRequest } from '@/lib/api.client';
 import { Project, ProjectStatus, ProjectStatusData } from '@/types/project';
 import { Client } from '@/types/client';
+import { formatDate } from '@/lib/utils';
 
 interface BackendProject {
   id: string;
@@ -61,7 +62,7 @@ const mapProject = (project: BackendProject): Project => ({
   clients: project.clients || [],
   status: project.status,
   progress: Number(project.progress ?? 0),
-  deadline: project.deadline_at ? new Date(project.deadline_at).toLocaleDateString() : 'N/A',
+  deadline: formatDate(project.deadline_at),
   budget: Number(project.budget ?? 0),
   pending_tasks: project.pending_tasks,
   team_count: project.team_count,

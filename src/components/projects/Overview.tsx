@@ -1,7 +1,22 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Project } from '@/types'
-import { BarChart3, Calendar, Upload } from 'lucide-react';
+import { BarChart3, Calendar, Upload, Info, Clock, CheckCircle } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+// Confetti animation (simple SVG burst)
+const Confetti = () => (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-fade-in z-50">
+        <svg width="180" height="80" viewBox="0 0 180 80" fill="none">
+            <g>
+                <circle cx="30" cy="40" r="6" fill="#facc15"/>
+                <circle cx="60" cy="20" r="4" fill="#34d399"/>
+                <circle cx="90" cy="60" r="5" fill="#60a5fa"/>
+                <circle cx="120" cy="30" r="4" fill="#f472b6"/>
+                <circle cx="150" cy="50" r="6" fill="#f87171"/>
+            </g>
+        </svg>
+    </div>
+);
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { QuickAction } from '@/types/quickaction';
@@ -22,21 +37,46 @@ export const quickActions: QuickAction[] = [
 
 export const Overview = ({ project, projectId }: OverviewProps) => {
     
-    const { activeAction, setActiveAction } = useQuickActionStore();
-    const { toast } = useToast();
-    const { data: teamData } = useProjectTeam(projectId);
-    const teamCount = teamData?.data?.length || 0;
 
-    const handleActionSubmit = () => {
-        const name = activeAction?.label;
-        setActiveAction(null);
-        toast({ title: `${name} Complete`, description: `${name} action completed successfully.` });
-    };
+        const { activeAction, setActiveAction } = useQuickActionStore();
+        const { toast } = useToast();
+        const { data: teamData } = useProjectTeam(projectId);
+        const teamCount = teamData?.data?.length || 0;
+        const [showConfetti, setShowConfetti] = useState(false);
+        const [dragActive, setDragActive] = useState(false);
+        type TimelineItem = {
+            icon: any;
+            label: string;
+            date: string;
+            color?: string;
+        };
+        const timeline: TimelineItem[] = [
+            { icon: Clock, label: 'Project Created', date: project.created_at || '' },
+            { icon: BarChart3, label: 'Last Updated', date: project.updated_at || '' },
+            { icon: CheckCircle, label: 'Status', date: project.status, color: project.status === 'completed' ? 'text-success' : 'text-primary' },
+        ];
+
+        useEffect(() => {
+            if (project.progress === 100 && project.status === 'completed') {
+                setShowConfetti(true);
+                const t = setTimeout(() => setShowConfetti(false), 2000);
+                return () => clearTimeout(t);
+            }
+        }, [project.progress, project.status]);
+
+        const handleActionSubmit = () => {
+                const name = activeAction?.label;
+                setActiveAction(null);
+                toast({ title: `${name} Complete`, description: `${name} action completed successfully.` });
+        };
 
     return (
         <>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6 lg:col-span-2 shadow-sm">
+                {/* Confetti on completion */}
+                {showConfetti && <Confetti />}
+                {/* Progress & Stats */}
+                <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6 lg:col-span-2 shadow-sm animate-fade-in-up">
                     <div className="flex items-center gap-2 mb-6">
                         <div className="h-1 w-8 rounded-full bg-primary"></div>
                         <h3 className="text-lg font-bold text-primary">Project Progress</h3>
@@ -46,33 +86,67 @@ export const Overview = ({ project, projectId }: OverviewProps) => {
                             <span className="text-foreground font-medium">Overall Completion</span>
                             <span className="font-bold text-primary text-base">{project.progress}%</span>
                         </div>
-                        <div className="h-3 rounded-full bg-muted/40">
+                        <div className="h-3 rounded-full bg-muted/40 overflow-hidden animate-grow">
                             <div className="h-3 rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all shadow-sm" style={{ width: `${project.progress}%` }} />
                         </div>
                         {project.progress === 100 && project.status !== 'completed' && (
-                            <div className="mt-3 p-3 rounded-lg bg-success/10 border border-success/30">
+                            <div className="mt-3 p-3 rounded-lg bg-success/10 border border-success/30 animate-fade-in">
                                 <p className="text-sm font-semibold text-success">🎉 Project Ready to Complete!</p>
                                 <p className="text-xs text-success/80">All work is done. Click the status badge to mark as completed.</p>
                             </div>
                         )}
                         {project.status === 'completed' && (
-                            <div className="mt-3 p-3 rounded-lg bg-success/10 border border-success/30">
+                            <div className="mt-3 p-3 rounded-lg bg-success/10 border border-success/30 animate-fade-in">
                                 <p className="text-sm font-semibold text-success">✓ Project Completed</p>
                             </div>
                         )}
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-8">
-                        <div className="rounded-lg border border-primary/20 bg-white p-4">
-                            <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2">Budget</p>
-                            <p className="text-2xl font-bold text-primary">₱{Number(project.budget || 0).toLocaleString()}</p>
-                        </div>
-                        <div className="rounded-lg border border-success/20 bg-white p-4">
-                            <p className="text-xs font-bold text-success uppercase tracking-wider mb-2">Team Size</p>
-                            <p className="text-2xl font-bold text-success">{teamCount} {teamCount === 1 ? 'Member' : 'Members'}</p>
-                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="rounded-lg border border-primary/20 bg-white p-4 flex items-center gap-2 group hover:shadow-lg transition-all cursor-pointer animate-fade-in-up">
+                                <Info className="h-4 w-4 text-primary/60 opacity-0 group-hover:opacity-100 transition" />
+                                <div>
+                                    <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2">Budget</p>
+                                    <p className="text-2xl font-bold text-primary">₱{Number(project.budget || 0).toLocaleString()}</p>
+                                </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Total project budget</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="rounded-lg border border-success/20 bg-white p-4 flex items-center gap-2 group hover:shadow-lg transition-all cursor-pointer animate-fade-in-up">
+                                <Info className="h-4 w-4 text-success/60 opacity-0 group-hover:opacity-100 transition" />
+                                <div>
+                                    <p className="text-xs font-bold text-success uppercase tracking-wider mb-2">Team Size</p>
+                                    <p className="text-2xl font-bold text-success">{teamCount} {teamCount === 1 ? 'Member' : 'Members'}</p>
+                                </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Number of team members</TooltipContent>
+                        </Tooltip>
+                    </div>
+                    {/* Timeline section */}
+                    <div className="mt-8">
+                        <h4 className="text-base font-semibold mb-2 text-primary">Timeline</h4>
+                        <ol className="relative border-l border-primary/20 ml-2">
+                            {timeline.map((item, idx) => (
+                                <li key={idx} className="mb-4 ml-4 animate-fade-in-up">
+                                    <span className={`absolute -left-5 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 ${item.color || 'text-primary'}`}>
+                                        <item.icon className="h-4 w-4" />
+                                    </span>
+                                    <div className="flex flex-col">
+                                        <span className="font-medium text-foreground text-sm">{item.label}</span>
+                                        <span className="text-xs text-muted-foreground">{typeof item.date === 'string' ? new Date(item.date).toLocaleString() : item.date}</span>
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
                     </div>
                 </div>
-                <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6 shadow-sm">
+                {/* Quick Actions */}
+                <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6 shadow-sm animate-fade-in-up">
                     <div className="flex items-center gap-2 mb-6">
                         <div className="h-1 w-8 rounded-full bg-primary"></div>
                         <h3 className="text-lg font-bold text-primary">Quick Actions</h3>
@@ -83,16 +157,25 @@ export const Overview = ({ project, projectId }: OverviewProps) => {
                             const bgColors = ['bg-primary/10', 'bg-success/10', 'bg-warning/10'];
                             const textColors = ['text-primary', 'text-success', 'text-warning'];
                             return (
-                                <button
-                                    key={action.label}
-                                    onClick={() => setActiveAction(action)}
-                                    className={`w-full flex items-center gap-3 rounded-lg ${bgColors[idx]} border border-current/20 px-4 py-3 text-sm font-semibold ${textColors[idx]} hover:shadow-md hover:scale-105 transition-all duration-200 text-left`}
-                                >
-                                    <div className={`h-8 w-8 rounded-md bg-gradient-to-br ${colors[idx]} from-current/20 to-transparent flex items-center justify-center`}>
-                                        <action.icon className="h-4 w-4" />
-                                    </div>
-                                    <span>{action.label}</span>
-                                </button>
+                                <div key={action.label} className="flex gap-2 items-center">
+                                    <button
+                                        onClick={() => setActiveAction(action)}
+                                        className={`w-full flex items-center gap-3 rounded-lg ${bgColors[idx]} border border-current/20 px-4 py-3 text-sm font-semibold ${textColors[idx]} hover:shadow-md hover:scale-105 transition-all duration-200 text-left animate-fade-in-up`}
+                                    >
+                                        <div className={`h-8 w-8 rounded-md bg-gradient-to-br ${colors[idx]} from-current/20 to-transparent flex items-center justify-center`}>
+                                            <action.icon className="h-4 w-4" />
+                                        </div>
+                                        <span>{action.label}</span>
+                                    </button>
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <Button size="icon" variant="ghost" className="hover:bg-muted/50">
+                                                                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                                                                </Button>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent side="left">View details for {action.label}</TooltipContent>
+                                                                        </Tooltip>
+                                </div>
                             );
                         })}
                     </div>
@@ -110,12 +193,18 @@ export const Overview = ({ project, projectId }: OverviewProps) => {
                     </DialogHeader>
                     <div className="py-6">
                         {activeAction?.label === 'Upload Blueprint' && (
-                            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent p-12 cursor-pointer hover:border-primary/60 hover:shadow-md transition-all">
-                                <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                            <div
+                                className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent p-12 cursor-pointer hover:border-primary/60 hover:shadow-md transition-all relative ${dragActive ? 'border-success/60 bg-success/10' : ''}`}
+                                onDragOver={e => { e.preventDefault(); setDragActive(true); }}
+                                onDragLeave={e => { e.preventDefault(); setDragActive(false); }}
+                                onDrop={e => { e.preventDefault(); setDragActive(false); toast({ title: 'File uploaded!', description: e.dataTransfer.files[0]?.name }); }}
+                            >
+                                <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center mb-4 animate-fade-in">
                                     <Upload className="h-8 w-8 text-primary" />
                                 </div>
                                 <p className="text-base font-semibold text-foreground">Click to upload or drag & drop</p>
                                 <p className="text-sm text-muted-foreground mt-2">DWG, PDF, PNG up to 50MB</p>
+                                {dragActive && <span className="absolute inset-0 flex items-center justify-center text-success font-bold text-lg animate-pulse">Drop to upload!</span>}
                             </div>
                         )}
                         {activeAction?.label === 'Schedule Meeting' && (

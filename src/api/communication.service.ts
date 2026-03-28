@@ -5,6 +5,7 @@
 
 import { apiRequest } from '@/lib/api.client';
 import { ChatRoom, TimelineEvent } from '@/types/communication';
+import { formatTime, formatDate } from '@/lib/utils';
 
 export interface CreateMessageRequest {
   chat_room_id: string;
@@ -47,7 +48,7 @@ export const communicationService = {
             id: String(room.id),
             name: room.name,
             lastMessage: room.last_message || '',
-            time: room.last_message_at ? new Date(room.last_message_at).toLocaleTimeString() : '',
+            time: formatTime(room.last_message_at),
             unread: 0,
           }))
         : [],
@@ -92,7 +93,7 @@ export const communicationService = {
         id: String(response?.data?.id),
         name: response?.data?.name,
         lastMessage: response?.data?.last_message || '',
-        time: response?.data?.last_message_at ? new Date(response.data.last_message_at).toLocaleTimeString() : '',
+        time: formatTime(response?.data?.last_message_at),
         unread: 0,
       },
     })),
@@ -111,7 +112,7 @@ export const communicationService = {
         ? response.data
             .filter((event: any) => String(event.project_id) === String(projectId))
             .map((event: any) => ({
-              date: event.event_date ? new Date(event.event_date).toLocaleDateString() : '',
+              date: formatDate(event.event_date),
               title: event.title,
               description: event.description || '',
             }))
@@ -130,7 +131,7 @@ export const communicationService = {
     }).then((response: any) => ({
       ...response,
       data: {
-        date: response?.data?.event_date ? new Date(response.data.event_date).toLocaleDateString() : '',
+        date: formatDate(response?.data?.event_date),
         title: response?.data?.title,
         description: response?.data?.description || '',
       },

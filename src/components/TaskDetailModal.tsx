@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Trash2, Send } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { cn, formatDate, formatDateTime } from '@/lib/utils';
 
 interface TaskDetailModalProps {
   task: Task;
@@ -130,7 +130,7 @@ export const TaskDetailModal = ({ task, isOpen, onClose }: TaskDetailModalProps)
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <p className="text-sm text-foreground">
-                      {new Date(task.due_at).toLocaleDateString()}
+                      {formatDate(task.due_at)}
                     </p>
                   </div>
                 </div>
@@ -188,7 +188,7 @@ export const TaskDetailModal = ({ task, isOpen, onClose }: TaskDetailModalProps)
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold text-foreground">{comment.user.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(comment.created_at).toLocaleDateString()}
+                          {formatDateTime(comment.created_at)}
                         </p>
                       </div>
                       <p className="text-sm text-foreground mt-1 break-words">{comment.content}</p>

@@ -20,6 +20,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { User, UserRole } from '@/types';
 import { Plus, Search, Mail, Phone, Building2, Shield, Edit2, Trash2 } from 'lucide-react';
 import { capitalizeFirstLetter } from '@/lib/helper';
+import { formatDate, formatDateTime } from '@/lib/utils';
 
 const roleColors: Record<UserRole, string> = {
   admin: 'bg-red-100 text-red-800',
@@ -353,14 +354,14 @@ const Users = () => {
                 <div>
                   <h4 className="text-sm font-semibold text-foreground mb-1">Email Verified</h4>
                   <p className="text-sm text-muted-foreground">
-                    {new Date(selectedUser.email_verified_at).toLocaleDateString()}
+                    {formatDateTime(selectedUser.email_verified_at)}
                   </p>
                 </div>
               )}
               <div>
                 <h4 className="text-sm font-semibold text-foreground mb-1">Joined</h4>
                 <p className="text-sm text-muted-foreground">
-                  {new Date(selectedUser.created_at).toLocaleDateString()}
+                  {formatDate(selectedUser.created_at)}
                 </p>
               </div>
             </div>

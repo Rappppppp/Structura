@@ -9,6 +9,7 @@ import { useAttendanceRecords } from "@/hooks/queries/useAttendance";
 import { PhotoModal } from "./PhotoModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AttendanceRecord } from "@/types/attendance";
+import { formatDateTime, formatTime as formatTimeUtil, formatDate as formatDateUtil } from "@/lib/utils";
 
 interface AttendanceHistoryProps {
   onPhotoClick?: (photoUrl: string, caption: string) => void;
@@ -25,7 +26,7 @@ export const AttendanceHistory = ({ onPhotoClick }: AttendanceHistoryProps) => {
     if (photoUrl) {
       setSelectedPhoto({
         url: photoUrl,
-        caption: `${type === 'checkIn' ? 'Check-in' : 'Check-out'} - ${new Date(record.checkInTime).toLocaleString()}`,
+        caption: `${type === 'checkIn' ? 'Check-in' : 'Check-out'} - ${formatDateTime(record.checkInTime)}`,
       });
       setPhotoModalOpen(true);
       onPhotoClick?.(photoUrl, `${type === 'checkIn' ? 'Check-in' : 'Check-out'}`);
@@ -33,13 +34,11 @@ export const AttendanceHistory = ({ onPhotoClick }: AttendanceHistoryProps) => {
   };
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return formatTimeUtil(dateString);
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    return formatDateUtil(dateString);
   };
 
   const calculateDuration = (checkIn: string, checkOut?: string) => {

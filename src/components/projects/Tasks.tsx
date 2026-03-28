@@ -7,6 +7,7 @@ import { KanbanTask, TaskStatus, TaskPriority } from '@/types/task';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, AlertCircle, Clock, Search } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 interface TasksProps {
     projectId?: string;
@@ -44,7 +45,9 @@ function formatDue(dueAt?: string): { text: string; overdue: boolean } | null {
     const date = new Date(dueAt);
     const now = new Date();
     const overdue = date < now;
-    return { text: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), overdue };
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return { text: `${month}/${day}/${date.getFullYear()}`, overdue };
 }
 
 const Tasks = ({ projectId }: TasksProps) => {

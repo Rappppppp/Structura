@@ -53,15 +53,17 @@ const AdminAttendance = () => {
     { value: 'team', label: 'Team' },
   ];
 
-  const formatDate = (dateString?: string) => {
+  const formatDateUtil = (dateString?: string) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const date = new Date(dateString);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = date.getHours() >= 12 ? 'PM' : 'AM';
+    const displayHours = date.getHours() % 12 || 12;
+    return `${month}/${day}/${year} ${String(displayHours).padStart(2, '0')}:${minutes} ${ampm}`;
   };
 
   const formatDuration = (minutes?: number) => {
@@ -167,14 +169,14 @@ const AdminAttendance = () => {
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <LogIn className="h-4 w-4 text-success" />
-                        {formatDate(record.checkInTime)}
+                        {formatDateUtil(record.checkInTime)}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {record.checkOutTime ? (
                         <div className="flex items-center gap-2">
                           <LogOut className="h-4 w-4 text-destructive" />
-                          {formatDate(record.checkOutTime)}
+                          {formatDateUtil(record.checkOutTime)}
                         </div>
                       ) : (
                         <span className="text-warning font-semibold">Active</span>
@@ -262,7 +264,7 @@ const AdminAttendance = () => {
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-foreground">
-                    <span className="font-semibold">Time:</span> {formatDate(selectedAttendance.checkInTime)}
+                    <span className="font-semibold">Time:</span> {formatDateUtil(selectedAttendance.checkInTime)}
                   </p>
                   {selectedAttendance.checkInPhoto && (
                     <div>
@@ -286,7 +288,7 @@ const AdminAttendance = () => {
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm text-foreground">
-                      <span className="font-semibold">Time:</span> {formatDate(selectedAttendance.checkOutTime)}
+                      <span className="font-semibold">Time:</span> {formatDateUtil(selectedAttendance.checkOutTime)}
                     </p>
                     {selectedAttendance.checkOutPhoto && (
                       <div>
@@ -304,8 +306,8 @@ const AdminAttendance = () => {
 
               {/* Metadata */}
               <div className="text-xs text-muted-foreground pt-2 border-t border-border">
-                <p>Created: {formatDate(selectedAttendance.createdAt)}</p>
-                <p>Updated: {formatDate(selectedAttendance.updatedAt)}</p>
+                <p>Created: {formatDateUtil(selectedAttendance.createdAt)}</p>
+                <p>Updated: {formatDateUtil(selectedAttendance.updatedAt)}</p>
               </div>
             </div>
           )}

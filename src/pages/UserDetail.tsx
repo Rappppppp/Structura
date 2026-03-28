@@ -6,6 +6,7 @@ import { useUser } from '@/hooks/queries/useUsers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { UserRole } from '@/types';
 import { capitalizeFirstLetter } from '@/lib/helper';
+import { formatDate } from '@/lib/utils';
 
 const roleColors: Record<UserRole, string> = {
   admin: 'bg-red-100 text-red-800',
@@ -128,13 +129,13 @@ const UserDetail = () => {
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Account Created</span>
               <span className="text-sm font-medium text-foreground">
-                {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                {formatDate(user.created_at)}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Last Updated</span>
               <span className="text-sm font-medium text-foreground">
-                {user.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'N/A'}
+                {formatDate(user.updated_at)}
               </span>
             </div>
             <div className="pt-2 border-t border-border">

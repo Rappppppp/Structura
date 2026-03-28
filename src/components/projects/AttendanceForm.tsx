@@ -19,6 +19,7 @@ import { useTeamMembers } from "@/hooks/queries/useTeamMembers";
 import { useToast } from "@/hooks/use-toast";
 import { useAttendanceStore } from "@/stores/attendance.store";
 import { imageOptimization } from "@/lib/imageOptimization";
+import { formatTime } from "@/lib/utils";
 
 interface AttendanceFormProps {
   capturedPhoto?: string | null;
@@ -186,9 +187,9 @@ export const AttendanceForm = ({ capturedPhoto, onCaptureTrigger, onSuccess }: A
     }
   };
 
-  const formatTime = (checkInTime?: string) => {
+  const formatTimeLocal = (checkInTime?: string) => {
     if (!checkInTime) return "";
-    return new Date(checkInTime).toLocaleTimeString();
+    return formatTime(checkInTime);
   };
 
   const getTimeElapsed = () => {
@@ -248,7 +249,7 @@ export const AttendanceForm = ({ capturedPhoto, onCaptureTrigger, onSuccess }: A
               <div>
                 <div className="text-xs text-primary/70">Check In Time</div>
                 <div className="font-semibold">
-                  {formatTime(activeAttendance.attendance.checkInTime)}
+                  {formatTimeLocal(activeAttendance.attendance.checkInTime)}
                 </div>
               </div>
               <div>

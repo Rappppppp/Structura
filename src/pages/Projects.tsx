@@ -9,6 +9,7 @@ import { projectTeamService } from '@/api/project-team.service';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Eye, Trash2, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { formatDate } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -168,7 +169,7 @@ const Projects = () => {
                     <span className="text-xs text-muted-foreground">{p.progress}%</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm text-muted-foreground">{p.deadline}</td>
+                <td className="px-4 py-3 text-sm text-muted-foreground">{formatDate(p.deadline)}</td>
                 <td className="px-4 py-3">
                   <button
                     onClick={() => navigate(`/projects/${p.id}`)}

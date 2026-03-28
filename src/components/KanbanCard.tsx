@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 
 interface KanbanCardProps {
   task: Task;
@@ -53,7 +53,7 @@ export const KanbanCard = ({ task, onDragStart, onClick }: KanbanCardProps) => {
             <div className={cn('flex items-center gap-1 text-xs', isOverdue ? 'text-destructive' : 'text-muted-foreground')}>
               {isOverdue && <AlertCircle className="h-3 w-3" />}
               {!isOverdue && <Calendar className="h-3 w-3" />}
-              <span>{new Date(task.due_at).toLocaleDateString()}</span>
+              <span>{formatDate(task.due_at)}</span>
             </div>
           )}
 

@@ -7,6 +7,7 @@ import { useProjects } from '@/hooks/queries/useProjects';
 import { useCreateInvoiceMutation } from '@/hooks/mutations/useInvoiceMutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Upload, FileText, ClipboardList } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -168,11 +169,11 @@ const Payments = () => {
                       </td>
 
                       <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {inv.dueDate}
+                        {formatDate(inv.dueDate)}
                       </td>
 
                       <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {inv.paidAt || '—'}
+                        {inv.paidAt ? formatDate(inv.paidAt) : '—'}
                       </td>
 
                       <td className="px-6 py-4 text-right">

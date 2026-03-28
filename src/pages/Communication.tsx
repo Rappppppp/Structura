@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatDateTime } from '@/lib/utils';
 
 const Communication = () => {
   const { user: currentUser } = useAuth();
@@ -132,7 +133,7 @@ const Communication = () => {
                             )}
                             <p className="text-sm leading-relaxed">{msg.content}</p>
                             <p className={`text-xs mt-1 ${isOwnMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                              {msg.created_at}
+                              {formatDateTime(msg.created_at)}
                             </p>
                           </div>
                         </div>

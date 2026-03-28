@@ -42,12 +42,13 @@ const navByRole: Record<UserRole, NavSection[]> = {
         { label: 'Reports', path: '/reports', icon: BarChart3 },
       ]
     },
-    {
-      title: 'Tools',
-      items: [
-        { label: 'AI Design Assistant', path: '/ai-design-assistant', icon: PencilRuler },
-      ]
-    },
+    // {
+    //   title: 'Tools',
+    //   items: [
+    //     { label: 'AI Design Assistant', path: '/ai-design-assistant', icon: PencilRuler },
+    //     { label: 'Image Generations', path: '/image-generations', icon: PencilRuler },
+    //   ]
+    // },
   ],
   architect: [
     {
@@ -75,6 +76,7 @@ const navByRole: Record<UserRole, NavSection[]> = {
       items: [
         { label: 'AI Assistant', path: '/ai-insights', icon: Brain },
         { label: 'AI Design Assistant', path: '/ai-design-assistant', icon: PencilRuler },
+        { label: 'Image Generations', path: '/image-generations', icon: PencilRuler },
         { label: 'Reports', path: '/reports', icon: BarChart3 },
       ]
     },
@@ -158,6 +160,7 @@ const navByRole: Record<UserRole, NavSection[]> = {
       title: 'Tools',
       items: [
         { label: 'AI Design Assistant', path: '/ai-design-assistant', icon: PencilRuler },
+        { label: 'Image Generations', path: '/image-generations', icon: PencilRuler },
       ]
     },
   ],

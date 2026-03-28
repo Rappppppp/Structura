@@ -9,11 +9,11 @@ import { taskService } from '@/api/tasks.service';
 /**
  * Hook to fetch all tasks, optionally filtered by project
  */
-export const useTasks = (projectId?: string) => {
+export const useTasks = (projectId?: string, options?: { staleTime?: number }) => {
   return useQuery({
     queryKey: ['tasks', { projectId }],
     queryFn: () => taskService.list({ project_id: projectId }),
-    staleTime: 0, // Fresh data always
+    staleTime: options?.staleTime ?? 0,
   });
 };
 

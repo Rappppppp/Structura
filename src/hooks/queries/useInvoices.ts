@@ -9,11 +9,11 @@ import { invoiceService } from '@/api/invoices.service';
 /**
  * Hook to fetch all invoices with optional filters
  */
-export const useInvoices = (page = 1, perPage = 10, status?: string) => {
+export const useInvoices = (page = 1, perPage = 10, status?: string, options?: { staleTime?: number }) => {
   return useQuery({
     queryKey: ['invoices', { page, perPage, status }],
     queryFn: () => invoiceService.list({ page, perPage, status }),
-    staleTime: 0, // Fresh data always for financial data
+    staleTime: options?.staleTime ?? 0,
   });
 };
 

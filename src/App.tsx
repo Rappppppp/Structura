@@ -21,7 +21,6 @@ import UserDetail from "./pages/UserDetail";
 import Attendance from "./pages/Attendance";
 import AdminAttendance from "./pages/AdminAttendance";
 import NotFound from "./pages/NotFound";
-import DesignAssistant from "./pages/DesignAssistant";
 
 const ProtectedLayout = () => {
   const { isAuthenticated } = useAuth();
@@ -44,7 +43,7 @@ const protectedRoutes = [
   { path: "/communication", element: <Communication /> },
   { path: "/payments", element: <Payments /> },
   { path: "/reports", element: <Reports /> },
-  { path: "/ai-design-assistant", element: <DesignAssistant /> },
+
   { path: "/attendance", element: <Attendance /> },
   { path: "/admin/attendance", element: <AdminAttendance /> },
   // { path: "/ai-insights", element: <AIInsights /> },

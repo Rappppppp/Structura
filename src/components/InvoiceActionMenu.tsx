@@ -10,6 +10,7 @@ import {
 import { useMarkInvoicePaidMutation, useDeleteInvoiceMutation } from '@/hooks/mutations/useInvoiceMutations';
 import { useToast } from '@/hooks/use-toast';
 import { Invoice } from '@/types/invoice';
+import { formatDate } from '@/lib/utils';
 
 interface InvoiceActionMenuProps {
   invoice: Invoice;
@@ -26,7 +27,7 @@ export const InvoiceActionMenu = ({ invoice, onActionComplete }: InvoiceActionMe
       await markPaidMutation.mutateAsync(invoice.id);
       toast({
         title: 'Success',
-        description: `Invoice marked as paid on ${new Date().toLocaleDateString()}`,
+        description: `Invoice marked as paid on ${formatDate(new Date())}`,
       });
       onActionComplete?.();
     } catch (err: any) {

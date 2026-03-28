@@ -10,11 +10,11 @@ import { ProjectStatus } from '@/types/project';
 /**
  * Hook to fetch all projects
  */
-export const useProjects = (status?: ProjectStatus, page = 1, perPage = 10) => {
+export const useProjects = (status?: ProjectStatus, page = 1, perPage = 10, options?: { staleTime?: number }) => {
   return useQuery({
     queryKey: ['projects', { status, page, perPage }],
     queryFn: () => projectService.list({ status, page, perPage }),
-    staleTime: 0, // Fresh data always
+    staleTime: options?.staleTime ?? 0,
   });
 };
 
@@ -33,10 +33,10 @@ export const useProject = (projectId: string | undefined | null) => {
 /**
  * Hook to fetch project status analytics
  */
-export const useProjectStatusData = () => {
+export const useProjectStatusData = (options?: { staleTime?: number }) => {
   return useQuery({
     queryKey: ['projects', 'statusData'],
     queryFn: () => projectService.getStatusData(),
-    staleTime: 5 * 60 * 1000, // 5 minutes - analytics data doesn't change as frequently
+    staleTime: options?.staleTime ?? 5 * 60 * 1000,
   });
 };

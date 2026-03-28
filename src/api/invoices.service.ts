@@ -5,6 +5,7 @@
 
 import { apiRequest } from '@/lib/api.client';
 import { Invoice, RevenueData } from '@/types/invoice';
+import { formatDate } from '@/lib/utils';
 
 interface BackendInvoice {
   id: string;
@@ -69,8 +70,8 @@ const mapInvoice = (invoice: BackendInvoice): Invoice => ({
   project: invoice.project?.name || 'N/A',
   amount: Number(invoice.amount ?? 0),
   status: invoice.status,
-  dueDate: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A',
-  paidAt: invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString() : undefined,
+  dueDate: formatDate(invoice.due_date),
+  paidAt: formatDate(invoice.paid_at),
   contractValue: invoice.contract_value ? Number(invoice.contract_value) : undefined,
 });
 
