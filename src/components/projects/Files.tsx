@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { useProjectFiles } from '@/hooks/queries/useProjectFiles';
 import { useDeleteProjectFileMutation, useUploadProjectFileMutation } from '@/hooks/mutations/useProjectFileMutations';
+import { useCurrentUser } from '@/hooks/queries/useAuth';
 
 interface FilesProps {
     projectId?: string;
@@ -21,6 +22,8 @@ const Files = ({ projectId }: FilesProps) => {
     const { data, isLoading } = useProjectFiles(projectId);
     const uploadMutation = useUploadProjectFileMutation(projectId || '');
     const deleteMutation = useDeleteProjectFileMutation(projectId || '');
+    const { data: currentUserData } = useCurrentUser();
+    const currentUser = currentUserData?.data?.user;
 
     const files = data?.data || [];
 
@@ -107,15 +110,18 @@ const Files = ({ projectId }: FilesProps) => {
                                     {formatBytes(file.size_bytes)}{file.uploaded_by ? ` • Uploaded by ${file.uploaded_by}` : ''}
                                 </p>
                             </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(file.id)}
+                            {currentUser?.role !== 'client' && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDelete(file.id)}
                                 disabled={deleteMutation.isPending}
                                 className="text-muted-foreground hover:text-destructive"
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
+                            )}
+                            
                         </div>
                     ))}
                 </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useCurrentUser } from '@/hooks/queries/useAuth';
 import { useProjectTeam, useUsersDropdown } from '@/hooks/queries/useProjectTeam';
 import { useAddProjectTeamMemberMutation, useRemoveProjectTeamMemberMutation } from '@/hooks/mutations/useProjectTeamMutations';
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +39,8 @@ const TeamMembers = ({ projectId }: TeamMembersProps) => {
   const [form, setForm] = useState({ user_id: '', base_role: 'member' as BaseRole, specialty_role: '' });
 
   const members = teamData?.data || [];
+  const { data: currentUserData } = useCurrentUser();
+  const currentUser = currentUserData?.data?.user;
   const allUsers = usersData?.data || [];
 
   // Filter out users already in the project team
@@ -50,8 +53,8 @@ const TeamMembers = ({ projectId }: TeamMembersProps) => {
       return;
     }
     try {
-      await addMember.mutateAsync({ 
-        user_id: form.user_id, 
+      await addMember.mutateAsync({
+        user_id: form.user_id,
         base_role: form.base_role,
         specialty_role: form.specialty_role || undefined,
       });
@@ -87,9 +90,11 @@ const TeamMembers = ({ projectId }: TeamMembersProps) => {
           <h3 className="text-base font-semibold text-foreground">Project Team</h3>
           <p className="text-sm text-muted-foreground">{members.length} member{members.length !== 1 ? 's' : ''} assigned</p>
         </div>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4" /> Add Member
-        </Button>
+        {currentUser?.role !== 'client' && (
+          <Button size="sm" onClick={() => setAddOpen(true)}>
+            <Plus className="h-4 w-4" /> Add Member
+          </Button>
+        )}
       </div>
 
       {members.length === 0 ? (
@@ -119,13 +124,15 @@ const TeamMembers = ({ projectId }: TeamMembersProps) => {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleRemove(m.user.id, m.user.name)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive mt-0.5"
-                  title="Remove from project"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                {currentUser?.role !== 'client' && (
+                  <button
+                    onClick={() => handleRemove(m.user.id, m.user.name)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive mt-0.5"
+                    title="Remove from project"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
               </div>
               <div className="mt-3 space-y-1.5">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -144,57 +151,59 @@ const TeamMembers = ({ projectId }: TeamMembersProps) => {
         </div>
       )}
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Team Member</DialogTitle>
-            <DialogDescription>Assign a user to this project with a specific role.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">User *</label>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
-                value={form.user_id}
-                onChange={e => setForm({ ...form, user_id: e.target.value })}
-                disabled={loadingUsers}
-              >
-                <option value="">{loadingUsers ? 'Loading users...' : 'Select a user...'}</option>
-                {availableUsers.map(u => (
-                  <option key={u.id} value={u.id}>{u.name} — {u.email}</option>
-                ))}
-              </select>
+      {currentUser?.role !== 'client' && (
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Team Member</DialogTitle>
+              <DialogDescription>Assign a user to this project with a specific role.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">User *</label>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+                  value={form.user_id}
+                  onChange={e => setForm({ ...form, user_id: e.target.value })}
+                  disabled={loadingUsers}
+                >
+                  <option value="">{loadingUsers ? 'Loading users...' : 'Select a user...'}</option>
+                  {availableUsers.map(u => (
+                    <option key={u.id} value={u.id}>{u.name} — {u.email}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Base Role *</label>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+                  value={form.base_role}
+                  onChange={e => setForm({ ...form, base_role: e.target.value as BaseRole })}
+                >
+                  {BASE_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Specialty Role (Optional)</label>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+                  value={form.specialty_role}
+                  onChange={e => setForm({ ...form, specialty_role: e.target.value })}
+                >
+                  <option value="">None</option>
+                  {SPECIALTY_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Base Role *</label>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
-                value={form.base_role}
-                onChange={e => setForm({ ...form, base_role: e.target.value as BaseRole })}
-              >
-                {BASE_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Specialty Role (Optional)</label>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
-                value={form.specialty_role}
-                onChange={e => setForm({ ...form, specialty_role: e.target.value })}
-              >
-                <option value="">None</option>
-                {SPECIALTY_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={addMember.isPending}>
-              {addMember.isPending ? 'Adding...' : 'Add Team Member'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
+              <Button onClick={handleAdd} disabled={addMember.isPending}>
+                {addMember.isPending ? 'Adding...' : 'Add Team Member'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

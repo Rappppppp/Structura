@@ -140,27 +140,12 @@ const navByRole: Record<UserRole, NavSection[]> = {
       title: 'Projects',
       items: [
         { label: 'My Projects', path: '/projects', icon: FolderKanban },
-        { label: 'Timeline', path: '/timeline', icon: Clock },
-        { label: 'Documents', path: '/documents', icon: FileText },
-      ]
-    },
-    {
-      title: 'Financials',
-      items: [
-        { label: 'Payments', path: '/payments', icon: CreditCard },
       ]
     },
     {
       title: 'Communication',
       items: [
         { label: 'Chat', path: '/communication', icon: MessageSquare },
-      ]
-    },
-    {
-      title: 'Tools',
-      items: [
-        { label: 'AI Design Assistant', path: '/ai-design-assistant', icon: PencilRuler },
-        { label: 'Image Generations', path: '/image-generations', icon: PencilRuler },
       ]
     },
   ],

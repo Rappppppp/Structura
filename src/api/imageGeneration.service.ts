@@ -13,6 +13,11 @@ export interface ProjectImage {
   size_bytes: number;
   created_at: string;
   updated_at: string;
+  generator?: {
+    id: string;
+    name: string;
+    email?: string;
+  };
 }
 
 export const imageGenerationService = {

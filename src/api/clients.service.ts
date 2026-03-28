@@ -68,7 +68,7 @@ const mapClient = (client: any): Client => {
     phone: client.phone || client.phone_number,
     industry: client.industry || client.company,
     contact_person: client.contact_person,
-    location: client.location,
+    location: client.location || client.address || '',
     active_projects: client.active_projects,
     total_value: client.total_value,
     status: (client.status as any) || 'active',

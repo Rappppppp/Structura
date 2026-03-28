@@ -49,11 +49,12 @@ export const Overview = ({ project, projectId }: OverviewProps) => {
             label: string;
             date: string;
             color?: string;
+            status?: string;
         };
         const timeline: TimelineItem[] = [
             { icon: Clock, label: 'Project Created', date: project.created_at || '' },
             { icon: BarChart3, label: 'Last Updated', date: project.updated_at || '' },
-            { icon: CheckCircle, label: 'Status', date: project.status, color: project.status === 'completed' ? 'text-success' : 'text-primary' },
+            { icon: CheckCircle, label: 'Status', date: '', color: project.status === 'completed' ? 'text-success' : 'text-primary', status: project.status },
         ];
 
         useEffect(() => {
@@ -136,15 +137,19 @@ export const Overview = ({ project, projectId }: OverviewProps) => {
                     {/* Timeline section */}
                     <div className="mt-8">
                         <h4 className="text-base font-semibold mb-2 text-primary">Timeline</h4>
-                        <ol className="relative border-l border-primary/20 ml-2">
+                        <ol className="relative border-primary/20 ml-2">
                             {timeline.map((item, idx) => (
                                 <li key={idx} className="mb-4 ml-4 animate-fade-in-up">
-                                    <span className={`absolute -left-5 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 ${item.color || 'text-primary'}`}>
+                                    <span className={`absolute -left-5 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 ${item.color || 'text-primary'}`}> 
                                         <item.icon className="h-4 w-4" />
                                     </span>
                                     <div className="flex flex-col">
                                         <span className="font-medium text-foreground text-sm">{item.label}</span>
-                                        <span className="text-xs text-muted-foreground">{typeof item.date === 'string' ? new Date(item.date).toLocaleString() : item.date}</span>
+                                        {item.label === 'Status' ? (
+                                            <span className="text-xs text-muted-foreground capitalize">{item.status}</span>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground">{item.date ? new Date(item.date).toLocaleString() : ''}</span>
+                                        )}
                                     </div>
                                 </li>
                             ))}

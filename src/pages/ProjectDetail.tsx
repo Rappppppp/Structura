@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect, useRef } from 'react';
+import { useCurrentUser } from '@/hooks/queries/useAuth';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -16,6 +17,7 @@ import TeamMembers from '@/components/projects/TeamMembers';
 import Tasks from '@/components/projects/Tasks';
 import Files from '@/components/projects/Files';
 import Chat from '@/components/projects/Chat';
+import { useTasks } from '@/hooks/queries/useTasks';
 import { Wand2, Send, Loader2, Plus, Download } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -28,10 +30,10 @@ const tabs = [
   { key: 'structural', label: 'Structural', icon: Cuboid },
   { key: 'architectural', label: 'Architectural', icon: Pyramid },
   { key: 'team', label: 'Team Members', icon: Users },
-  { key: 'tasks', label: 'Kanban Tasks', icon: FolderKanban },
+  // { key: 'tasks', label: 'Kanban Tasks', icon: FolderKanban },
   { key: 'files', label: 'Files & Blueprints', icon: FileText },
   { key: 'chat', label: 'Project Chat', icon: MessageSquare },
-  { key: 'design', label: 'Design Assistant', icon: Wand2 },
+  ...(typeof window !== 'undefined' && window.__CURRENT_USER_ROLE === 'client' ? [] : [{ key: 'design', label: 'Design Assistant', icon: Wand2 }]),
   { key: 'images', label: 'Image Generations', icon: FileText },
 ];
 
@@ -45,6 +47,13 @@ const statusOptions: { value: ProjectStatus; label: string; icon: any; color: st
 
 const ProjectDetail = () => {
   const { id } = useParams();
+  const { data: currentUserData } = useCurrentUser();
+  const currentUser = currentUserData?.data?.user;
+
+  // Remove Design Assistant tab for client users
+  const filteredTabs = currentUser?.role === 'client'
+    ? tabs.filter(tab => tab.key !== 'design')
+    : tabs;
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -157,23 +166,69 @@ const ProjectDetail = () => {
       handleSendMessage();
     }
   };
-  const handleDownload = (imageUrl: string) => {
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = `design-${Date.now()}.png`;
-    link.click();
-  };
+
 
   // --- Image Generations State ---
   const { data: imagesData } = useProjectImages(id || '', 1);
   const images = imagesData?.data || [];
 
+  // Fetch all tasks for this project (reactive)
+  const { data: tasksData } = useTasks(id);
+  const allTasks = tasksData?.data || [];
+  const structuralTasks = allTasks.filter((t: any) => t.category === 'structural');
+  const architecturalTasks = allTasks.filter((t: any) => t.category === 'architectural');
+
+  const renderTaskList = (tasks: any[]) => (
+    <div className="overflow-x-auto rounded-lg border border-border mb-6">
+      <table className="min-w-full divide-y divide-border text-xs">
+        <thead className="bg-muted/40">
+          <tr>
+            <th className="px-3 py-2 text-left font-semibold">Title</th>
+            <th className="px-3 py-2 text-left font-semibold">Status</th>
+            <th className="px-3 py-2 text-left font-semibold">Assignee</th>
+            <th className="px-3 py-2 text-left font-semibold">Due</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tasks.length === 0 ? (
+            <tr><td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">No tasks found.</td></tr>
+          ) : (
+            tasks.map(task => (
+              <tr key={task.id} className="hover:bg-muted/10 transition-colors">
+                <td className="px-3 py-2 font-medium">{task.title}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${task.status === 'done' ? 'bg-green-100 text-green-700' : task.status === 'in-progress' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`}>{task.status.replace('-', ' ').toUpperCase()}</span>
+                </td>
+                <td className="px-3 py-2">{task.assignee || 'Unassigned'}</td>
+                <td className="px-3 py-2">{task.dueAt ? new Date(task.dueAt).toLocaleDateString() : '-'}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+
   const TAB_COMPONENTS: Record<string, ReactNode> = {
-    overview: <Overview project={project} projectId={id} />,
-    team: <TeamMembers projectId={id} />,
-    tasks: <Tasks projectId={id} />,
-    files: <Files projectId={id} />,
-    chat: <Chat projectId={id} />,
+    overview: <Overview project={project} projectId={id} />, 
+    team: <TeamMembers projectId={id} />, 
+    structural: (
+      <div>
+        <h3 className="text-lg font-bold mb-2 flex items-center gap-2"><Cuboid className="h-4 w-4" /> Structural Tasks</h3>
+        {renderTaskList(structuralTasks)}
+        {currentUser?.role !== 'client' && <Tasks projectId={id} />}
+      </div>
+    ),
+    architectural: (
+      <div>
+        <h3 className="text-lg font-bold mb-2 flex items-center gap-2"><Pyramid className="h-4 w-4" /> Architectural Tasks</h3>
+        {renderTaskList(architecturalTasks)}
+        {currentUser?.role !== 'client' && <Tasks projectId={id} />}
+      </div>
+    ),
+    tasks: <Tasks projectId={id} />, 
+    files: <Files projectId={id} />, 
+    chat: <Chat projectId={id} />, 
     design: (
       <div className="flex flex-col h-[65vh]">
         <div className="flex-1 overflow-y-auto p-0 sm:p-0">
@@ -225,15 +280,14 @@ const ProjectDetail = () => {
                                 alt="Generated design"
                                 className="w-full rounded-lg border border-primary/20 shadow-md"
                               />
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="mt-2 gap-2 text-xs"
-                                onClick={() => handleDownload(`${import.meta.env.VITE_APP_BASE_URL}${msg.image}`)}
+                              <a
+                                href={`${import.meta.env.VITE_APP_BASE_URL}${msg.image}`}
+                                download={`design-assistant-${msg.imageId || Date.now()}.png`}
+                                className="inline-flex items-center gap-2 mt-2 text-xs text-primary hover:underline"
                               >
                                 <Download className="h-3 w-3" />
                                 Download
-                              </Button>
+                              </a>
                             </div>
                           )}
                         </>
@@ -296,12 +350,17 @@ const ProjectDetail = () => {
               <div key={img.id} className="bg-card border border-border rounded-2xl p-4 flex flex-col items-center shadow-md hover:shadow-lg transition-all">
                 <img src={`${import.meta.env.VITE_APP_BASE_URL}${img.url}`} alt={img.prompt} className="w-full rounded-xl mb-3 border shadow-sm" />
                 <div className="text-sm text-muted-foreground mb-2 truncate w-full text-center font-medium">{img.prompt}</div>
-                <Button size="sm" variant="outline" className="w-full" onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = `${import.meta.env.VITE_APP_BASE_URL}${img.url}`;
-                  link.download = `design-${img.id}.png`;
-                  link.click();
-                }}>Download</Button>
+                {img.generator?.name && (
+                  <div className="text-xs text-muted-foreground mb-2 text-center">Generated by: <span className="font-semibold">{img.generator.name}</span></div>
+                )}
+                <a
+                  href={`${import.meta.env.VITE_APP_BASE_URL}${img.url}`}
+                  download={`design-${img.id}.png`}
+                  className="inline-flex items-center justify-center w-full gap-2 px-3 py-2 rounded-md border border-primary/30 text-primary hover:bg-primary/10 text-sm font-semibold transition-colors"
+                >
+                  <Download className="h-3 w-3" />
+                  Download
+                </a>
               </div>
             ))}
           </div>
@@ -355,7 +414,8 @@ const ProjectDetail = () => {
         <div className="flex flex-col gap-3 min-w-[220px] items-end">
           <div className="flex items-center gap-3 mb-2">
             <StatusBadge status={project.status} />
-            <Button
+            {currentUser?.role !== 'client' && (
+              <Button
               onClick={() => setStatusDialogOpen(true)}
               variant="outline"
               className="flex items-center gap-2"
@@ -363,6 +423,8 @@ const ProjectDetail = () => {
               <Clock className="h-4 w-4" />
               Change Status
             </Button>
+            )}
+            
             {project.progress === 100 && project.status !== 'completed' && (
               <Button
                 onClick={handleAutoComplete}
@@ -415,7 +477,7 @@ const ProjectDetail = () => {
       </Dialog>
 
       <div className="mb-6 flex gap-1 border-b border-border">
-        {tabs.map(tab => (
+        {filteredTabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
