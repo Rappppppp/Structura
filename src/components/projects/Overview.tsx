@@ -107,7 +107,7 @@ export const Overview = ({ project, projectId }: OverviewProps) => {
             </div> */}
 
             {/* Progress, Timeline, and Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
                 {/* Progress & Timeline */}
                 <div className="md:col-span-2 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6 shadow-sm animate-fade-in-up">
                     <div className="flex items-center gap-2 mb-6">
@@ -156,41 +156,7 @@ export const Overview = ({ project, projectId }: OverviewProps) => {
                         </ol>
                     </div>
                 </div>
-                {/* Quick Actions */}
-                <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6 shadow-sm animate-fade-in-up">
-                    <div className="flex items-center gap-2 mb-6">
-                        <div className="h-1 w-8 rounded-full bg-primary"></div>
-                        <h3 className="text-lg font-bold text-primary">Quick Actions</h3>
-                    </div>
-                    <div className="space-y-2">
-                        {quickActions.map((action, idx) => {
-                            const colors = ['from-primary', 'from-success', 'from-warning'];
-                            const bgColors = ['bg-primary/10', 'bg-success/10', 'bg-warning/10'];
-                            const textColors = ['text-primary', 'text-success', 'text-warning'];
-                            return (
-                                <div key={action.label} className="flex gap-2 items-center">
-                                    <button
-                                        onClick={() => setActiveAction(action)}
-                                        className={`w-full flex items-center gap-3 rounded-lg ${bgColors[idx]} border border-current/20 px-4 py-3 text-sm font-semibold ${textColors[idx]} hover:shadow-md hover:scale-105 transition-all duration-200 text-left animate-fade-in-up`}
-                                    >
-                                        <div className={`h-8 w-8 rounded-md bg-gradient-to-br ${colors[idx]} from-current/20 to-transparent flex items-center justify-center`}>
-                                            <action.icon className="h-4 w-4" />
-                                        </div>
-                                        <span>{action.label}</span>
-                                    </button>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button size="icon" variant="ghost" className="hover:bg-muted/50">
-                                                <Info className="h-4 w-4 text-muted-foreground" />
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="left">View details for {action.label}</TooltipContent>
-                                    </Tooltip>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+      
             </div>
 
             {/* Dialog for Quick Actions */}

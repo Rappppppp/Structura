@@ -1,4 +1,5 @@
 import { useTasks } from '@/hooks/queries/useTasks';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useUpdateTaskStatusMutation, useCreateTaskMutation, useUpdateTaskMutation, useDeleteTaskMutation } from '@/hooks/mutations/useTaskMutations';
 import { useToast } from '@/hooks/use-toast';
@@ -7,7 +8,9 @@ import { KanbanTask, TaskStatus, TaskPriority } from '@/types/task';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, AlertCircle, Clock, Search } from 'lucide-react';
+
 import { formatDate } from '@/lib/utils';
+import { suggestTasks, bulkCreateTasks } from '@/api/ai.service';
 
 interface TasksProps {
     projectId?: string;
@@ -54,6 +57,7 @@ function formatDue(dueAt?: string): { text: string; overdue: boolean } | null {
 }
 
 const Tasks = ({ projectId }: TasksProps) => {
+    const queryClient = useQueryClient();
     const { data: tasksData } = useTasks(projectId);
     const tasks = tasksData?.data || [];
     const { data: teamData } = useProjectTeam(projectId);
@@ -88,6 +92,17 @@ const Tasks = ({ projectId }: TasksProps) => {
     const [priorityFilter, setPriorityFilter] = useState<'all' | TaskPriority>('all');
     const [assigneeFilter, setAssigneeFilter] = useState<'all' | string>('all');
     const [search, setSearch] = useState('');
+
+    // --- AI Task Suggestion State ---
+    const [aiDialogOpen, setAIDialogOpen] = useState(false);
+    const [aiPrompt, setAIPrompt] = useState('');
+    const [aiLoading, setAILoading] = useState(false);
+    const [aiTasks, setAITasks] = useState<any[]>([]);
+    const [aiError, setAIError] = useState<string | null>(null);
+    const [aiSelected, setAISelected] = useState<Set<number>>(new Set());
+    // Import the AI service (ESM)
+    // import at top of file:
+    // import { aiService } from '@/api/ai.service';
 
     const transitionStatus = async (task: KanbanTask, status: TaskStatus) => {
         if (task.status === status) return;
@@ -217,6 +232,7 @@ const Tasks = ({ projectId }: TasksProps) => {
     });
     const totalCount = tasks.length;
 
+
     return (
         <div>
             {/* Board header */}
@@ -262,8 +278,107 @@ const Tasks = ({ projectId }: TasksProps) => {
                     <Button size="sm" onClick={() => openCreate('todo')}>
                         <Plus className="h-4 w-4" /> Add Task
                     </Button>
+                    <Button size="sm" variant="outline" onClick={() => setAIDialogOpen(true)}>
+                        <Plus className="h-4 w-4 text-primary" /> Create Tasks with AI
+                    </Button>
                 </div>
             </div>
+
+            {/* AI Task Suggestion Dialog */}
+            <Dialog open={aiDialogOpen} onOpenChange={setAIDialogOpen}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>AI Task Scheduler</DialogTitle>
+                        <DialogDescription>Describe your project or phase and AI will suggest tasks. You can review and send them to the board.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                        <textarea
+                            className="w-full rounded border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 resize-none"
+                            rows={3}
+                            placeholder="Describe what needs to be done..."
+                            value={aiPrompt}
+                            onChange={e => setAIPrompt(e.target.value)}
+                            disabled={aiLoading}
+                        />
+                        <Button
+                            onClick={async () => {
+                                setAILoading(true);
+                                setAIError(null);
+                                setAITasks([]);
+                                try {
+                                    const res = await suggestTasks(aiPrompt);
+                                    setAITasks(res.tasks || []);
+                                } catch (err: any) {
+                                    setAIError(err?.response?.data?.message || 'Failed to get AI suggestions');
+                                } finally {
+                                    setAILoading(false);
+                                }
+                            }}
+                            disabled={aiLoading || !aiPrompt.trim()}
+                            className="w-full"
+                        >
+                            {aiLoading ? 'Generating...' : 'Suggest Tasks'}
+                        </Button>
+                        {aiError && <div className="text-red-600 text-xs">{aiError}</div>}
+                        {aiTasks.length > 0 && (
+                            <div className="max-h-64 overflow-y-auto border rounded p-2 bg-muted/30">
+                                <div className="mb-2 text-xs text-muted-foreground">Review and uncheck any tasks you don't want to add:</div>
+                                {aiTasks.map((task, idx) => (
+                                    <div key={idx} className="flex items-start gap-2 border-b last:border-b-0 py-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={!aiSelected.size || aiSelected.has(idx)}
+                                            onChange={() => {
+                                                const next = new Set(aiSelected);
+                                                if (next.has(idx)) next.delete(idx); else next.add(idx);
+                                                setAISelected(next);
+                                            }}
+                                            className="mt-1"
+                                        />
+                                        <div>
+                                            <div className="font-semibold text-sm">{task.title}</div>
+                                            <div className="text-xs text-muted-foreground">{task.description}</div>
+                                            <div className="text-xs mt-1">
+                                                <span className="mr-2">Category: <b>{task.category}</b></span>
+                                                {task.subCategory && <span className="mr-2">Sub: <b>{task.subCategory}</b></span>}
+                                                {task.finishingType && <span>Finish: <b>{task.finishingType}</b></span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                <Button
+                                    className="mt-3 w-full"
+                                    onClick={async () => {
+                                        if (!projectId) return;
+                                        setAILoading(true);
+                                        try {
+                                            const selectedTasks = aiTasks
+                                                .filter((_, idx) => !aiSelected.size || aiSelected.has(idx))
+                                                .map(task => ({ ...task, assigned_to: null }));
+                                            await bulkCreateTasks(projectId, selectedTasks);
+                                            // Invalidate tasks query to update Kanban board
+                                            queryClient.invalidateQueries({ queryKey: ['tasks', { projectId }] });
+                                            queryClient.invalidateQueries({ queryKey: ['tasks'] });
+                                            setAIDialogOpen(false);
+                                            setAITasks([]);
+                                            setAIPrompt('');
+                                            setAISelected(new Set());
+                                            toast({ title: 'Tasks created from AI suggestions' });
+                                        } catch (err: any) {
+                                            setAIError(err?.response?.data?.message || 'Failed to create tasks');
+                                        } finally {
+                                            setAILoading(false);
+                                        }
+                                    }}
+                                    disabled={aiLoading || aiTasks.length === 0}
+                                >
+                                    Add Selected Tasks to Board
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Columns */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
