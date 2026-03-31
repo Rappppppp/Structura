@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useProjectStore } from '@/stores/project.store';
-import { useInvoiceStore } from '@/stores/invoice.store';
+import { useProjectStatusData } from '@/hooks/queries/useProjects';
+import { useRevenueData } from '@/hooks/queries/useInvoices';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   AreaChart, Area
@@ -21,8 +21,26 @@ const aiInsights = [
 const Reports = () => {
   const [reportOpen, setReportOpen] = useState(false);
   const { toast } = useToast();
-  const statusData = useProjectStore((s) => s.statusData);
-  const revenueData = useInvoiceStore((s) => s.revenueData);
+  const { data: statusDataResponse } = useProjectStatusData();
+  const { data: revenueDataResponse } = useRevenueData();
+
+  const status = statusDataResponse?.data || {
+    total_projects: 0,
+    active_projects: 0,
+    completed_projects: 0,
+    on_hold_projects: 0,
+  };
+
+  const statusData = [
+    {
+      month: 'Current',
+      active: status.active_projects,
+      completed: status.completed_projects,
+      onHold: status.on_hold_projects,
+    },
+  ];
+
+  const revenueData = revenueDataResponse?.data || [];
 
   return (
     <DashboardLayout>

@@ -1,38 +1,105 @@
 import { create } from 'zustand';
-import type { User, UserRole } from '@/types';
+import { tokenStorage } from '@/lib/token';
+import type { User } from '@/types';
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
 }
 
 interface AuthActions {
-  login: (email: string, password: string, role: UserRole) => void;
+  setUser: (user: User) => void;
+  setAuthenticated: (authenticated: boolean) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
   logout: () => void;
+  initializeAuth: () => void;
 }
 
 type AuthStore = AuthState & AuthActions;
 
-const roleNames: Record<UserRole, string> = {
-  admin: 'Alex Morgan',
-  architect: 'Sarah Chen',
-  engineer: 'James Wilson',
-  client: 'Michael Roberts',
+const AUTH_USER_KEY = 'auth_user';
+
+/**
+ * Get initial auth state from localStorage
+ * Restores user session on page reload if token exists
+ */
+const getInitialAuthState = () => {
+  try {
+    const token = tokenStorage.getToken();
+    const userJson = localStorage.getItem(AUTH_USER_KEY);
+    
+    if (token && userJson) {
+      const user = JSON.parse(userJson);
+      return {
+        user,
+        isAuthenticated: true,
+      };
+    }
+  } catch (error) {
+    console.error('Failed to restore auth state:', error);
+  }
+  
+  return {
+    user: null,
+    isAuthenticated: false,
+  };
 };
 
-export const useAuthStore = create<AuthStore>((set) => ({
-  user: null,
-  isAuthenticated: false,
+const initialState = getInitialAuthState();
 
-  login: (email, _password, role) => {
+export const useAuthStore = create<AuthStore>((set) => ({
+  user: initialState.user,
+  isAuthenticated: initialState.isAuthenticated,
+  isLoading: false,
+  error: null,
+
+  setUser: (user) => {
+    // Persist user to localStorage
+    try {
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    } catch (error) {
+      console.error('Failed to persist user:', error);
+    }
+    
     set({
-      user: { email, name: roleNames[role], role },
+      user,
       isAuthenticated: true,
+      error: null,
     });
   },
 
+  setAuthenticated: (authenticated) => {
+    set({ isAuthenticated: authenticated });
+  },
+
+  setLoading: (loading) => {
+    set({ isLoading: loading });
+  },
+
+  setError: (error) => {
+    set({ error });
+  },
+
   logout: () => {
-    set({ user: null, isAuthenticated: false });
+    tokenStorage.clearAll();
+    
+    set({
+      user: null,
+      isAuthenticated: false,
+      error: null,
+      isLoading: false,
+    });
+  },
+
+  initializeAuth: () => {
+    const state = getInitialAuthState();
+    set({
+      user: state.user,
+      isAuthenticated: state.isAuthenticated,
+    });
   },
 }));
 
@@ -40,3 +107,5 @@ export const useAuthStore = create<AuthStore>((set) => ({
 export const selectUser = (state: AuthStore) => state.user;
 export const selectIsAuthenticated = (state: AuthStore) => state.isAuthenticated;
 export const selectUserRole = (state: AuthStore) => state.user?.role;
+export const selectIsLoading = (state: AuthStore) => state.isLoading;
+export const selectError = (state: AuthStore) => state.error;

@@ -1,6 +1,4 @@
-import { ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -14,14 +12,15 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Communication from "./pages/Communication";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
-import AIInsights from "./pages/AIInsights";
 import Settings from "./pages/Settings";
 import Teams from "./pages/Teams";
 import Clients from "./pages/Clients";
+import ClientDetail from "./pages/ClientDetail";
+import Users from "./pages/Users";
+import UserDetail from "./pages/UserDetail";
+import Attendance from "./pages/Attendance";
+import AdminAttendance from "./pages/AdminAttendance";
 import NotFound from "./pages/NotFound";
-import DesignAssistant from "./pages/DesignAssistant";
-
-const queryClient = new QueryClient();
 
 const ProtectedLayout = () => {
   const { isAuthenticated } = useAuth();
@@ -44,14 +43,19 @@ const protectedRoutes = [
   { path: "/communication", element: <Communication /> },
   { path: "/payments", element: <Payments /> },
   { path: "/reports", element: <Reports /> },
-  { path: "/ai-design-assistant", element: <DesignAssistant /> },
+
+  { path: "/attendance", element: <Attendance /> },
+  { path: "/admin/attendance", element: <AdminAttendance /> },
   // { path: "/ai-insights", element: <AIInsights /> },
   { path: "/teams", element: <Teams /> },
   { path: "/clients", element: <Clients /> },
-  { path: "/tasks", element: <Dashboard /> },
-  { path: "/uploads", element: <Dashboard /> },
-  { path: "/timeline", element: <Dashboard /> },
-  { path: "/documents", element: <Dashboard /> },
+  { path: "/clients/:id", element: <ClientDetail /> },
+  { path: "/users", element: <Users /> },
+  { path: "/users/:id", element: <UserDetail /> },
+  { path: "/tasks", element: <Projects /> },
+  { path: "/uploads", element: <Projects /> },
+  { path: "/timeline", element: <Projects /> },
+  { path: "/documents", element: <Projects /> },
   { path: "/settings", element: <Settings /> },
 ];
 
@@ -68,17 +72,15 @@ const AppRoutes = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <TooltipProvider>
+    <Toaster />
+    <Sonner />
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
+  </TooltipProvider>
 );
 
 export default App;

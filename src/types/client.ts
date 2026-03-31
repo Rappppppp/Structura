@@ -1,15 +1,28 @@
-export type ClientStatus = 'active' | 'review' | 'completed' | 'on-hold';
+import { User } from './auth';
+
+export type ClientStatus = 'active' | 'inactive' | 'archived';
+
+export interface Project {
+  id: string;
+  name: string;
+  status?: string;
+  budget?: number;
+}
 
 export interface Client {
-  id: number;
+  id: string;
   name: string;
-  industry: string;
-  contactPerson: string;
+  industry?: string;
+  contact_person?: string;
   email: string;
-  phone: string;
-  location: string;
-  activeProjects: number;
-  totalValue: number;
+  phone?: string;
+  location?: string;
+  active_projects?: number;
+  total_value?: number;
   status: ClientStatus;
-  projects: string[];
+  account_owner?: User;
+  account_owner_id?: string;
+  projects?: Project[];
+  created_at?: string;
+  updated_at?: string;
 }
